@@ -1,0 +1,309 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load plotly_dash %}
+
+{% block content %} 
+<style> 
+  /* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+</style>
+
+<div class="container-fluid py-4">
+
+  <div class="row">
+    <div class="row mt-4">
+      <h1>Current Price Status</h1>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header pb-0">
+          <div class="row">
+            <div class="col-lg-6 col-7">
+              <p class="text-sm mb-0">
+                The table's last update was on <span>{{ latest_scraped_date|date:"F j, Y, g:i a" }}</span>
+            </p>
+            </div>
+
+          </div>
+        </div>
+        <div class="card-body px-0 pb-2">
+          <div class="table-responsive">
+            
+            <table class="table align-items-center mb-0" id="CurrentPriceStatus" class="display">
+              <thead>
+                <tr>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Product</th>
+                  <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">RSV|RSV+VAT</th>
+                  <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">My Price</th>
+                  <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">On Promo</th>
+                  
+                  {% for column in columns %}
+                  {% if "_price" in column.name %}
+                    <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">{{ column.header }}</th>
+                  {% endif %}
+                {% endfor %}
+                        
+                  {% if show_amazon_sold_by %}
+                      <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">AMZ Sold By</th>
+                  {% endif %}
+
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Update date</th>
+
+
+
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">OPPS</th>
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Details</th>
+                </tr>
+              </thead>
+                <tbody>
+                  {% for data in max_scraped_data  %}
+                  <tr>
+                      <td>
+                          <div class="d-flex px-2 py-1">
+
+                          <div class="d-flex flex-column justify-content-center">
+                          <h6 class="mb-0 text-sm">{{data.product.TITLE}}</h6>
+                      </div>
+                      </div>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <span class="text-xs font-weight-bold"> {{data.product.RSP|floatformat:"2"}}</span>
+                        <br>
+                        <span class="text-xs">{{ data.product.RSP_VAT|floatformat:"2" }}</span>
+                      </td>
+
+                      <td class="align-middle text-center text-sm">
+                        <span class="text-xs font-weight-bold"> {{ data.final_price |floatformat:"2" }}</span>
+                      </td>
+
+
+                      <td class="align-middle text-center text-sm">
+
+                        {% if data.promo_flag %}
+                        <span class="badge badge-sm bg-gradient-success">{{data.discount_percentage}}%</span>        
+
+                        {% else %}
+                        <span class="badge badge-sm bg-gradient-secondary">OFF</span>        
+
+                        {% endif %}
+                      </td>
+
+                      {% for column in columns %}
+                        {% if "_price" in column.name %}
+                          <td class="align-middle text-center text-sm">
+                            {# Get the corresponding compliance flag dynamically using the custom replace filter #}
+                            {% with compliance_flag=column.name|replace:"price,compliance_flag" %}
+                              {% if data|get_item2:compliance_flag %}
+                                <span >{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
+                              {% else %}
+                                <span class="badge bg-danger">{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
+                              {% endif %}
+                            {% endwith %}
+                          </td>
+                        {% endif %}
+                      {% endfor %}
+
+
+                      {% if show_amazon_sold_by %}
+                      <td class="align-middle text-center text-sm">
+                          {% if data.amazon_sold_by != "Amazon.sa" %}
+                              <span style="color: red;">{{ data.amazon_sold_by }}</span>
+                          {% else %}
+                              {{ data.amazon_sold_by }}
+                          {% endif %}
+                      </td>
+                      {% endif %}
+            
+                      <td class="align-middle text-center text-sm">
+                          <div >
+
+                          <div class="d-flex flex-column justify-content-center">
+                          
+                          {{ data.scraped_at|date:"F j, Y, g:i a" }}       
+                          </div>
+                          </div>
+                      </td> 
+                      <td class="align-middle text-center text-sm">
+                        <div class="progress-wrapper w-75 mx-auto">
+                          <div class="progress-info">
+                          <div class="progress-percentage">
+                          <span class="text-xs font-weight-bold">{{data.opps|floatformat:"2"}}%</span>
+                          </div>
+                          </div>
+                          <!-- <div class="progress">
+                          <div class="progress-bar bg-gradient-info w-20" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div> -->
+                        </div>
+                      </td>
+                      
+                      <td class="align-middle text-center text-sm">
+                        <div >
+
+                        <div class="d-flex flex-column justify-content-center">
+
+                        <button type="button" class="btn btn-secondary" 
+                                              data-bs-toggle="popover" 
+                                              data-bs-placement="left" 
+                                              data-bs-content="Opps value: {{data.opps|floatformat:'2'}}">
+                          Summary
+                        </button>
+                      
+                        </div>
+                        </div>
+                      </td> 
+                  </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+
+          </div>
+        </div>
+
+        <div class="col p-4">
+          <!-- Rounded switch -->
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="col p-4">
+          <a href="{% url 'dashboard:toggle_pin_table' 'CurrentPriceStatus' %}" >
+              {% if is_table_pinned %}
+                  Unpin Table
+              {% else %}
+                  Pin Table
+              {% endif %}
+          </a>
+          </div>
+      
+      </div>
+
+    </div>
+  </div>
+
+    <br>
+
+
+
+    
+            <div class="row" id="OPPS_price_graph">
+
+              <div class="row mt-4">
+                <h1>Dashboard</h1>
+          </div>
+                  <div class="card">
+    
+                    <div class="{% plotly_class name='OPPS_Line' %} card" >
+                        <div class="container-fluid">
+                            <div class="raw md-4">
+                                {% plotly_app name="OPPS_Line" ratio=.45%}
+                            </div>
+                        </div>
+                          <!-- Rounded switch -->
+                          <!-- <div class="col p-4">
+                          <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider round"></span>
+                          </label>
+                    </div>
+                    <div class="col p-4">
+                      <a href="{% url 'dashboard:toggle_pin_table' 'OPPS_price_graph' %}" >
+                          {% if is_table_pinned %}
+                              Unpin Table
+                          {% else %}
+                              Pin Table
+                          {% endif %}
+                      </a>
+                      </div> -->
+
+        
+
+                    </div>
+  
+                  </div>
+
+      
+            
+              </div>
+    
+
+
+    
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Select all popover elements and initialize them
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+      return new bootstrap.Popover(popoverTriggerEl)
+    })
+  });
+</script>
+
+
+
+{% endblock content %}
