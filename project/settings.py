@@ -11,7 +11,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-import os 
+import os
+from environ import Env
+
+env = Env()
+Env.read_env()
+ENVIROMENT =  env('ENVIROMENT', default='production')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n7_wqp63ma(eu=i#*m4_1z^jefgfdip644$tsjh8c029*tvwka'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if ENVIROMENT == 'development':
+    DEBUG = True
+else:   
+    DEBUG = False
+
 
 ALLOWED_HOSTS = []
 
