@@ -1,0 +1,37 @@
+{% extends 'layouts/base.html' %}
+
+
+{% block content %}
+
+
+
+<h4>Edit Profile</h4>
+<div class="bradcam_area bradcam_bg_1">
+    <div class="container">
+    </div>
+</div>
+
+<div class="job_details_area mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="apply_job_form white-bg">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ userform.as_p }}
+                        {{ profileform.as_p }}
+                        <button class="btn btn-primary" type="submit">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}
+
+
+
+
+ 

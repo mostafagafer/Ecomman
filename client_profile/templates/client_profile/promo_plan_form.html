@@ -1,0 +1,21 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row mt-4">
+        <div class="card">
+            <h1 class="mt-3">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Promo Plan</h1>
+            <br>
+            <form method="post" action="{% if form.instance.pk %}{% url 'client_profile:edit_promo_plan' form.instance.pk %}{% else %}{% url 'client_profile:create_promo_plan' %}{% endif %}">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Update{% else %}Create{% endif %}</button>
+            </form>
+        </div>
+    </div>
+</div>   
+
+
+{% endblock %}
+

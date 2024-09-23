@@ -1,0 +1,16 @@
+<!-- product_edit_form.html -->
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+<!-- !-- product_edit_form.html -->
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ product_form.as_p }}
+    {{ account_link_formset.management_form }}
+    {{ account_link_formset.as_p }}
+    {{ photo_formset.management_form }}
+    {{ photo_formset.as_p }}
+    <button type="submit">Save</button>
+</form>
+
+{% endblock %}

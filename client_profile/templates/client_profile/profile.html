@@ -1,0 +1,71 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+
+
+
+
+
+
+<div class="container-fluid">
+    <div class="row mt-5">
+        <div class="row">
+            <h3>My Profile</h3>
+        </div>
+        <div class="row">
+            <div class="card mb-4">
+            <div class="card-body">
+            <div class="row">
+            <div class="col-sm-3">
+            <p class="mb-0">User Name</p>
+            </div>
+            <div class="col-sm-9">
+            <p class="text-muted mb-0 font-weight-bolder">{{profile.user}}</p>
+            </div>
+            </div>
+            <hr>
+            <div class="row">
+            <div class="col-sm-3">
+            <p class="mb-0">Email</p>
+            </div>
+            <div class="col-sm-9">
+            <p class="text-muted mb-0 font-weight-bolder">{{profile.user.email}}</p>
+            </div>
+            </div>
+            <hr>
+            <div class="row">
+            <div class="col-sm-3">
+            <p class="mb-0">Client</p>
+            </div>
+            <div class="col-sm-9">
+            <p class="text-muted mb-0 font-weight-bolder">{{profile.client}}</p>
+            </div>
+            </div>
+            <hr>
+            <div class="row">
+            <div class="col-sm-3">
+            <p class="mb-0">My plan</p>
+            </div>
+            <div class="col-sm-9">
+            <p class="text-muted mb-0 font-weight-bolder">{{profile.plan}}</p>
+            </div>
+            </div>
+            <hr>
+            <div class="row">
+            <div class="col-sm-3">
+            <p class="mb-0">Address</p>
+            </div>
+            <div class="col-sm-9">
+            <p class="text-muted mb-0">Bay Area, San Francisco, CA</p>
+            </div>
+            </div>
+            </div>
+            </div>
+            <div class="p-5">
+            <a class="btn btn-outline-primary" href="{% url 'client_profile:profile_edit' %}"> Edit Profile</a>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock content %}
