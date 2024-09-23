@@ -196,7 +196,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Celery settings
-CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
+if ENVIROMENT == 'develpment':
+    CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
+else:
+    CELERY_BROKER_URL = env('REDIS_URL')
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-10-minutes_updated': {
@@ -245,7 +248,7 @@ LOGOUT_REDIRECT_URL = 'accounts:login'
 # Contact model
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'mostafagafer@gmail.com'
-EMAIL_HOST_PASSWORD = 'unlp qovt lqkz krrt'
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
