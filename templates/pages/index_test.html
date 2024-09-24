@@ -1,0 +1,46 @@
+{% extends 'layouts/base.html' %}
+{% block content %}
+  <div class="container mt-3">
+    <h2>Pinned Tables</h2>
+
+    {% for pinned_table in pinned_tables %}
+      {% if pinned_table.table_name == 'ScrapedDataTable' %}
+        <h3>{{ pinned_table.table_name }}</h3>
+        <table id="scrapedDataTable" class="display">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>RSP</th>
+              <th>Dawa Price</th>
+              <th>Nahdi Price</th>
+              <th>Amazon Price</th>
+              <th>Scraped At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for data in scraped_data %}
+              <tr>
+                <td>{{ data.product.TITLE }}</td>
+                <td>{{ data.product.RSP|floatformat:"2" }}</td>
+                <td>
+                  <a href="{{ data.product.Dawa_Link }}">{{ data.dawa_price|default:"N/A" }}</a>
+                </td>
+                <td>
+                  <a href="{{ data.product.Nahdi_Link }}">{{ data.nahdi_price|default:"N/A" }}</a>
+                </td>
+                <td>
+                  <a href="{{ data.product.Amazon_Link }}">{{ data.amazon_price|default:"N/A" }}</a>
+                </td>
+                <td>{{ data.scraped_at|date:"Y-m-d H:i:s" }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6">No data available</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endblock %}

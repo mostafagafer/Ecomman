@@ -17,7 +17,6 @@ from environ import Env
 env = Env()
 Env.read_env()
 ENVIROMENT =  env('ENVIROMENT', default='production')
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,8 +34,9 @@ else:
     DEBUG = False
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ecomman.up.railway.app']
 
+CSRF_TRUSTED_ORIGIN = ['https://ecomman.up.railway.app']
 
 # Application definition
 
@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     
     #Installed_apps
     'bootstrap4',
+    'cloudinary_storage',
+    'cloudinary',
     'django_filters',
     'django_tables2',
     'client_profile',
@@ -182,13 +184,22 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
-STATICFILES_LOCATION = 'static'
+# STATICFILES_LOCATION = 'static'
 STATIC_URL = '/static/'
-STATIC_ROOT = 'static'
+# STATIC_ROOT = 'static'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),  # Make sure the path is correct
+]
 
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+if ENVIROMENT == 'development':
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+else:
+    DEFAULT_FILE_STORAGE= 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    CLOUDINARY_STORAGE =  {'CLOUDINARY_URL': env('CLOUDINARY_URL')}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -200,6 +211,7 @@ if ENVIROMENT == 'develpment':
     CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
 else:
     CELERY_BROKER_URL = env('REDIS_URL')
+
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-10-minutes_updated': {
