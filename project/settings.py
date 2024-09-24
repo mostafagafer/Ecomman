@@ -76,6 +76,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    #whitenoise for staticfile
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 
     # Plotlydash
     'django_plotly_dash.middleware.BaseMiddleware',
@@ -192,6 +194,7 @@ STATICFILES_DIRS = [
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE="whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
 if ENVIROMENT == 'development':
