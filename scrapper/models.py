@@ -51,6 +51,7 @@ class ScrapedData(models.Model):
             return None
         ratio = self.dawa_price / self.final_price
         return ratio
+    
     @cached_property
     def nahdi_ratio(self):
         if self.final_price is None or self.nahdi_price is None:
@@ -149,9 +150,9 @@ class ScrapedData(models.Model):
             f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}, "
             f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}, "
             f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}, "
-            f"Amazon Compliance Ratio: {self.amazon_ratio:.2f}, "
-            f"Dawa Compliance Ratio: {self.dawa_ratio:.2f}, "
-            f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f}, "
+            f"Amazon Compliance Ratio: {self.amazon_ratio:.2f} " if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A, "
+            f"Dawa Compliance Ratio: {self.dawa_ratio:.2f} " if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A, "
+            f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f} " if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A, "
             f"Price Compliance Score: {self.pcs:.2f}%, "
             f"Online Price Performance Score: {self.opps:.2f}%, "
 
