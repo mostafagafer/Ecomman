@@ -1,26 +1,26 @@
 import random
 import time
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 # from datetime import datetime
 
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
 
 
 def get_chrome_options():
     options = Options()
-    options.add_argument('--headless')  # Comment this line to see the browser
+    options.add_argument('--headless')  # Run in headless mode
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--disable-extensions')
-    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-gpu')  # This option is not necessary for Firefox but can be left for compatibility
     options.add_argument('--incognito')
-    prefs = {"profile.managed_default_content_settings.images": 2}
-    options.add_experimental_option("prefs", prefs)
+    options.add_argument('--disable-infobars')  # Not applicable to Firefox
     return options
 
 def scrape_prices_from_dawa(urls):
@@ -29,7 +29,8 @@ def scrape_prices_from_dawa(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    driver = webdriver.Chrome(options=options)
+    service = Service()  # Using the default service; specify the path if necessary
+    driver = webdriver.Firefox(service=service, options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
@@ -83,7 +84,8 @@ def scrape_prices_from_nahdi(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    driver = webdriver.Chrome(options=options)
+    service = Service()  # Using the default service; specify the path if necessary
+    driver = webdriver.Firefox(service=service, options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
@@ -141,7 +143,8 @@ def scrape_prices_from_amazon(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    driver = webdriver.Chrome(options=options)
+    service = Service()  # Using the default service; specify the path if necessary
+    driver = webdriver.Firefox(service=service, options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs

@@ -16,7 +16,7 @@ from environ import Env
 
 env = Env()
 Env.read_env()
-ENVIROMENT =  env('ENVIROMENT')
+ENVIROMENT = env('ENVIROMENT')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -213,7 +213,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Celery settings
 # CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
 # ENVIROMENT = 'develpment'
-if ENVIROMENT == 'develpment':
+if ENVIROMENT == 'development':
     CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
 else:
     CELERY_BROKER_URL = env('REDIS_URL')
@@ -224,7 +224,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-10-minutes_updated': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 600.0,  # 10 minutes
+        'schedule': 150.0,  # 10 minutes
     },
 }
 CELERY_ACCEPT_CONTENT = ['json']
