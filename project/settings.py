@@ -178,7 +178,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Cairo'
+USE_TZ = True
 
 USE_I18N = True
 
@@ -222,15 +223,16 @@ else:
 CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_BEAT_SCHEDULE = {
-    'scrape-prices-every-10-minutes_updated': {
+    'scrape-prices-every-3-hours': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 150.0,  # 10 minutes
+        'schedule': 10800.0,  # 3 hours
     },
 }
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
+CELERY_TIMEZONE = 'Africa/Cairo'
 
 
 CELERY_TASK_TRACK_STARTED = True
