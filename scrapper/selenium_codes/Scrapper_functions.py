@@ -1,27 +1,37 @@
 import random
 import time
 from selenium import webdriver
-# from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 # from datetime import datetime
-
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
-
+import os
 
 def get_chrome_options():
-    options = Options()
-    options.add_argument('--headless')  # Run in headless mode
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-gpu')  # This option is not necessary for Firefox but can be left for compatibility
-    options.add_argument('--incognito')
-    options.add_argument('--disable-infobars')  # Not applicable to Firefox
-    return options
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.set_capability('browserless:token', os.environ['BROWSER_TOKEN'])
+    # Set args similar to puppeteer's for best performance
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-background-timer-throttling")
+    chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+    chrome_options.add_argument("--disable-breakpad")
+    chrome_options.add_argument("--disable-component-extensions-with-background-pages")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-features=TranslateUI,BlinkGenPropertyTrees")
+    chrome_options.add_argument("--disable-ipc-flooding-protection")
+    chrome_options.add_argument("--disable-renderer-backgrounding")
+    chrome_options.add_argument("--enable-features=NetworkService,NetworkServiceInProcess")
+    chrome_options.add_argument("--force-color-profile=srgb")
+    chrome_options.add_argument("--hide-scrollbars")
+    chrome_options.add_argument("--metrics-recording-only")
+    chrome_options.add_argument("--mute-audio")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+
+    return chrome_options
 
 def scrape_prices_from_dawa(urls):
     price_Dawa = []
@@ -29,8 +39,11 @@ def scrape_prices_from_dawa(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    service = Service()  # Using the default service; specify the path if necessary
-    driver = webdriver.Firefox(service=service, options=options)
+    # driver = webdriver.Chrome(options=options)
+    driver = webdriver.Remote(
+    command_executor=os.environ['BROWSER_WEBDRIVER_ENDPOINT'],
+    options=options)
+
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
@@ -84,8 +97,7 @@ def scrape_prices_from_nahdi(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    service = Service()  # Using the default service; specify the path if necessary
-    driver = webdriver.Firefox(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
@@ -143,8 +155,7 @@ def scrape_prices_from_amazon(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    service = Service()  # Using the default service; specify the path if necessary
-    driver = webdriver.Firefox(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
