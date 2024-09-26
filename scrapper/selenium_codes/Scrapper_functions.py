@@ -97,7 +97,10 @@ def scrape_prices_from_nahdi(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    driver = webdriver.Chrome(options=options)
+    # driver = webdriver.Chrome(options=options)
+    driver = webdriver.Remote(
+    command_executor=os.environ['BROWSER_WEBDRIVER_ENDPOINT'],
+    options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
@@ -155,7 +158,10 @@ def scrape_prices_from_amazon(urls):
 
     # Initialize WebDriver
     options = get_chrome_options()
-    driver = webdriver.Chrome(options=options)
+    # driver = webdriver.Chrome(options=options)
+    driver = webdriver.Remote(
+    command_executor=os.environ['BROWSER_WEBDRIVER_ENDPOINT'],
+    options=options)
     print("ChromeDriver initialized successfully.")
     
     # Iterate over the URLs
