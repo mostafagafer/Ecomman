@@ -7,11 +7,14 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 # from datetime import datetime
-import os
+from environ import Env
+
+env = Env()
+Env.read_env()
 
 def get_chrome_options():
     chrome_options = webdriver.ChromeOptions()
-    chrome_options.set_capability('browserless:token', os.environ['BROWSER_TOKEN'])
+    chrome_options.set_capability('browserless:token', env('BROWSER_TOKEN'))
     # Set args similar to puppeteer's for best performance
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--disable-background-timer-throttling")
@@ -41,7 +44,7 @@ def scrape_prices_from_dawa(urls):
     options = get_chrome_options()
     # driver = webdriver.Chrome(options=options)
     driver = webdriver.Remote(
-    command_executor=os.environ['BROWSER_WEBDRIVER_ENDPOINT'],
+    command_executor=env('BROWSER_WEBDRIVER_ENDPOINT'),
     options=options)
 
     print("ChromeDriver initialized successfully.")
@@ -99,7 +102,7 @@ def scrape_prices_from_nahdi(urls):
     options = get_chrome_options()
     # driver = webdriver.Chrome(options=options)
     driver = webdriver.Remote(
-    command_executor=os.environ['BROWSER_WEBDRIVER_ENDPOINT'],
+    command_executor=env('BROWSER_WEBDRIVER_ENDPOINT'),
     options=options)
     print("ChromeDriver initialized successfully.")
     
@@ -160,7 +163,7 @@ def scrape_prices_from_amazon(urls):
     options = get_chrome_options()
     # driver = webdriver.Chrome(options=options)
     driver = webdriver.Remote(
-    command_executor=os.environ['BROWSER_WEBDRIVER_ENDPOINT'],
+    command_executor=env('BROWSER_WEBDRIVER_ENDPOINT'),
     options=options)
     print("ChromeDriver initialized successfully.")
     
