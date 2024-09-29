@@ -154,9 +154,9 @@ DATABASES = {
     }
 }
 
-POSTGRES_LOCALLY = True
-if ENVIROMENT=='prodction' or POSTGRES_LOCALLY==True:
-    DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
+POSTGRES_LOCALLY = False
+if ENVIROMENT=='prodction' and POSTGRES_LOCALLY==True:
+    DATABASES['default'] = dj_database_url.parse(env('DATABASE_PUBLIC_URLs'))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

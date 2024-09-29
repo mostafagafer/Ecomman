@@ -2,6 +2,7 @@ venv/
 media/
 static/
 venv/
+SourceData/
 __pycache__
 .env
 celery_beat.log
