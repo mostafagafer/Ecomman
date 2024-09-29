@@ -157,6 +157,16 @@ POSTGRES_LOCALLY = True
 if ENVIROMENT=='prodction' and POSTGRES_LOCALLY==True:
     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'your_db_name',
+#         'USER': 'your_db_user',
+#         'PASSWORD': 'your_db_password',
+#         'HOST': 'your_db_host',
+#         'PORT': 'your_db_port',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -220,11 +230,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ENVIROMENT = 'develpment'
 if ENVIROMENT == 'development':
     CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 else:
     CELERY_BROKER_URL = env('REDIS_URL')
+    CELERY_RESULT_BACKEND = env('REDIS_URL')
 
 # CELERY_RESULT_BACKEND = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'django-db'
+# CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-3-hours': {
