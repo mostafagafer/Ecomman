@@ -157,7 +157,7 @@ POSTGRES_LOCALLY = True
 if ENVIROMENT=='prodction' and POSTGRES_LOCALLY==True:
     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
-    
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -229,7 +229,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-3-hours': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 10800.0,  # 3 hours
+        'schedule': 600.0,  # 3 hours
     },
 }
 
