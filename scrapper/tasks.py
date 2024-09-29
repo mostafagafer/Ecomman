@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task
-def scrape_prices_task(sample_size=2):
+def scrape_prices_task(sample_size=50):
     try:
         # Fetch all products
         all_products = Product.objects.all()
