@@ -154,7 +154,7 @@ DATABASES = {
     }
 }
 
-POSTGRES_LOCALLY = False
+POSTGRES_LOCALLY = True
 if ENVIROMENT=='prodction' or POSTGRES_LOCALLY==True:
     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
