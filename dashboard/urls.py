@@ -5,6 +5,7 @@ app_name = 'dashboard'
 
 urlpatterns = [
     # path('', views.dashboard, name='dashboard'),
+    path('', views.index, name='index'),
     path('current_price', views.price, name='price'),
     # path('product-performance/', views.product_performance_view, name='product_performance_view'),
     # path('product-performance2/', views.product_performance_view, name='product_performance_view'),

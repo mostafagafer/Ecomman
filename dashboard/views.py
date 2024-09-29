@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect
-
 from scrapper.models import ScrapedData
-from client_profile.models import Profile, PromoPlan, PinnedTable #s,Product, Subcategory, Brand
-from django.db.models import OuterRef, Subquery, Max, F, Value as V, FloatField
+from client_profile.models import Profile, PinnedTable #s,Product, Subcategory, Brand, PromoPlan
+# from django.db.models import OuterRef, Subquery, Max, F, Value as V, FloatField
+from django.db.models import OuterRef, Max, Subquery
 from django.contrib.auth.decorators import login_required
-from django.db.models.functions import Coalesce
+# from django.db.models.functions import Coalesce
 from .dash_apps.app import plot_dashboard
-
+import pandas as pd
 
 
 @login_required
@@ -28,7 +28,6 @@ def dashboard_view(request):
 
     context = {}
     return render(request, 'dashboard/dashboard.html', context)
-
 
 
 @login_required
@@ -86,9 +85,6 @@ def performance_view(request):
             'error_message': 'An error occurred while retrieving the data.'
         })
 
-import pandas as pd
-# from django.db.models import Avg
-# from django.db.models.functions import TruncDate
 
 @login_required
 def price(request):
@@ -189,6 +185,115 @@ def toggle_pin_table(request, table_name):
 
     return redirect(request.META.get('HTTP_REFERER', 'dashboard:price'))
 
+
+def index(request):
+  try:
+      profile = Profile.objects.get(user=request.user)  # Assuming you have a user profile
+      pinned_tables = profile.pinned_tables.all()
+
+      # Subquery to find the maximum scraped_at date for each product
+      max_date_subquery = ScrapedData.objects.filter(
+          product=OuterRef('product')
+      ).order_by('-scraped_at').values('scraped_at')[:1]
+
+      # Get all scraped data where scraped_at is the max date for each product (fetch model instances)
+      max_scraped_data = ScrapedData.objects.filter(
+      scraped_at=Subquery(max_date_subquery),
+      product__profile=profile
+      ).select_related('product')
+
+
+      # Get user accounts
+      user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
+
+      # Define all possible dynamic columns
+      all_columns = [
+          {'name': 'dawa_price', 'header': 'Dawa Price'},
+          {'name': 'nahdi_price', 'header': 'Nahdi Price'},
+          {'name': 'amazon_price', 'header': 'Amazon Price'},
+          {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
+          {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
+          {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
+      ]
+
+      # Filter columns to include only those related to user accounts (both price and compliance)
+      columns = [
+          col for col in all_columns
+          if col['name'] in [
+              f"{account.lower()}_price" for account in user_accounts
+          ] or col['name'] in [
+              f"{account.lower()}_compliance_flag" for account in user_accounts
+          ]
+      ]
+
+      # Check if "amazon" is in the user's accounts
+      show_amazon_sold_by = 'amazon' in user_accounts
+
+      # Check if the current table is pinned by the user
+      is_table_pinned = profile.pinned_tables.filter(table_name="CurrentPriceStatus").exists()
+
+      # Find the maximum `scraped_at` date across all products
+      latest_scraped_date = max_scraped_data.aggregate(latest_date=Max('scraped_at'))['latest_date']
+
+
+
+
+      # Filter max scraped data for each product
+      scraped_data = ScrapedData.objects.filter(
+          product__profile=profile
+      ).select_related('product')
+
+      # Step 1: Convert scraped_at to date (ignore time) and create a list for dataframe
+      scraped_data_list = []
+      for data in scraped_data:
+          scraped_data_list.append({
+              'scraped_at': data.scraped_at.strftime('%Y-%m-%d'),  # Convert to date string format
+              'opps': data.opps  # Use cached_property opps here
+          })
+
+      scraped_data_df = pd.DataFrame(scraped_data_list)
+
+      # Step 2: Group by scraped_at (ignoring the product) and calculate the average opps per day
+      grouped_df = scraped_data_df.groupby('scraped_at').agg({'opps': 'mean'}).reset_index()
+
+      # Step 3: Sort by scraped_at to get the latest and second-latest average opps
+      grouped_df = grouped_df.sort_values(by='scraped_at', ascending=False)
+
+      # Step 4: Get the latest and previous average opps
+      latest_opps = grouped_df.iloc[0]['opps'] if not grouped_df.empty else None
+      previous_opps = grouped_df.iloc[1]['opps'] if len(grouped_df) > 1 else None
+
+      # Step 5: Calculate the difference between the latest and previous opps
+      opps_difference = latest_opps - previous_opps if latest_opps is not None and previous_opps is not None else None
+
+      # Prepare data for template rendering
+      summary_data = {
+          'latest_opps': latest_opps,
+          'previous_opps': previous_opps,
+          'opps_difference': opps_difference,
+      }
+
+      context = {
+          'scraped_data': scraped_data,
+          'max_scraped_data': max_scraped_data,  # Now returning instances
+          'latest_scraped_date': latest_scraped_date,
+          'is_table_pinned': is_table_pinned,
+          'segment': 'index',
+          'user_accounts': user_accounts,
+          'show_amazon_sold_by': show_amazon_sold_by,
+          'columns': columns,
+          'pinned_tables': pinned_tables,  # Pass the list of pinned tables
+          'summary_data': summary_data,  # Summary for the latest and previous average opps
+      }
+
+      return render(request, 'pages/index.html', context)
+
+  except Exception as e:
+      # Log the exception or handle it as needed
+      print(f"An error occurred: {e}")
+      return render(request, 'pages/index.html', {
+          'error_message': 'An error occurred while retrieving the data.'
+      })
 
 
 

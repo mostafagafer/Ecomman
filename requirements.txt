@@ -31,6 +31,7 @@ dash-html-components==2.0.0
 dash-table==5.0.0
 debugpy==1.8.2
 decorator==5.1.1
+dj-database-url==2.2.0
 Django==5.0.7
 django-admin-soft-dashboard==1.0.12
 django-bootstrap4==24.3
@@ -78,6 +79,7 @@ platformdirs==4.2.2
 plotly==5.24.0
 prompt_toolkit==3.0.47
 psutil==6.0.0
+psycopg2-binary==2.9.9
 pure-eval==0.2.2
 pyasn1==0.6.0
 pyasn1_modules==0.4.0

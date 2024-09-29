@@ -1,0 +1,13 @@
+venv/
+media/
+static/
+venv/
+__pycache__
+.env
+celery_beat.log
+celerybeat-schedule.dir
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+LesEtaps.txt
+.DS_Store
+
