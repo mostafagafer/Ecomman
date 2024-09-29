@@ -15,6 +15,7 @@ import os
 from environ import Env
 import dj_database_url
 env = Env()
+
 Env.read_env()
 ENVIROMENT = env('ENVIROMENT')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -154,7 +155,7 @@ DATABASES = {
 }
 
 POSTGRES_LOCALLY = True
-if ENVIROMENT=='prodction' and POSTGRES_LOCALLY==True:
+if ENVIROMENT=='prodction' or POSTGRES_LOCALLY==True:
     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
 # DATABASES = {
