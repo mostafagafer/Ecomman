@@ -242,7 +242,7 @@ else:
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-3-hours': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 10800.0,  # 3 hours
+        'schedule': 43200.0,  # 12 hours
     },
 }
 
@@ -279,7 +279,7 @@ LOGGING = {
 }
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
-LOGIN_REDIRECT_URL = '/' #'accounts:profile'
+LOGIN_REDIRECT_URL = 'dashboard:index' #'accounts:profile'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 # LOGIN_URL = 'accounts:login'
 

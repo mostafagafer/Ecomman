@@ -9,6 +9,7 @@ celery_beat.log
 celerybeat-schedule.dir
 celerybeat-schedule.bak
 celerybeat-schedule.dat
+test.py
 LesEtaps.txt
 .DS_Store
 
