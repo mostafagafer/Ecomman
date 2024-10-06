@@ -134,29 +134,55 @@ class ScrapedData(models.Model):
         
 
 
+    # def __str__(self):
+    #     return (
+    #         f"Scraped data for Product {self.product.TITLE} "
+    #         f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}, "
+    #         f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}, "
+    #         f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}, "
+    #         f"Amazon Shipping: {self.amazon_shipping if self.amazon_shipping else 'N/A'}, "
+    #         f"Amazon Sold By: {self.amazon_sold_by if self.amazon_sold_by else 'N/A'}, "
+    #         f"Promo Flag: {'Yes' if self.promo_flag else 'No'}, "
+    #         f"Discount Percentage: {self.discount_percentage:.2f}%, "
+    #         f"Final Price: {self.final_price:.2f}, "
+    #         f"Price Deviation Score: {self.price_deviation_score:.2f}, "
+    #         f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}, "
+    #         f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}, "
+    #         f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}, "
+    #         f"Amazon Compliance Ratio: {self.amazon_ratio:.2f} " if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A, "
+    #         f"Dawa Compliance Ratio: {self.dawa_ratio:.2f} " if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A, "
+    #         f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f} " if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A, "
+    #         f"Price Compliance Score: {self.pcs:.2f}%, "
+    #         f"Online Price Performance Score: {self.opps:.2f}%, "
+
+
+    #     )
+
     def __str__(self):
-        return (
-            f"Scraped data for Product {self.product.TITLE} "
-            f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}, "
-            f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}, "
-            f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}, "
-            f"Amazon Shipping: {self.amazon_shipping if self.amazon_shipping else 'N/A'}, "
-            f"Amazon Sold By: {self.amazon_sold_by if self.amazon_sold_by else 'N/A'}, "
-            f"Promo Flag: {'Yes' if self.promo_flag else 'No'}, "
-            f"Discount Percentage: {self.discount_percentage:.2f}%, "
-            f"Final Price: {self.final_price:.2f}, "
-            f"Price Deviation Score: {self.price_deviation_score:.2f}, "
-            f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}, "
-            f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}, "
-            f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}, "
-            f"Amazon Compliance Ratio: {self.amazon_ratio:.2f} " if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A, "
-            f"Dawa Compliance Ratio: {self.dawa_ratio:.2f} " if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A, "
-            f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f} " if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A, "
-            f"Price Compliance Score: {self.pcs:.2f}%, "
-            f"Online Price Performance Score: {self.opps:.2f}%, "
-
-
-        )
+        # Gather all details in a list for clarity and manage None cases directly within formatting
+        details = [
+            f"Scraped data for Product {self.product.TITLE}",
+            f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}",
+            f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}",
+            f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}",
+            f"Amazon Shipping: {self.amazon_shipping if self.amazon_shipping is not None else 'N/A'}",
+            f"Amazon Sold By: {self.amazon_sold_by if self.amazon_sold_by is not None else 'N/A'}",
+            f"Promo Flag: {'Yes' if self.promo_flag else 'No'}",
+            f"Discount Percentage: {self.discount_percentage:.2f}%",
+            f"Final Price: {self.final_price:.2f}",
+            f"Price Deviation Score: {self.price_deviation_score:.2f}",
+            f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}",
+            f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}",
+            f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}",
+            f"Amazon Compliance Ratio: {self.amazon_ratio:.2f}" if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A",
+            f"Dawa Compliance Ratio: {self.dawa_ratio:.2f}" if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A",
+            f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f}" if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A",
+            f"Price Compliance Score: {self.pcs:.2f}%",
+            f"Online Price Performance Score: {self.opps:.2f}%"
+        ]
+        
+        # Join details with commas for readability and return a single formatted string
+        return ", ".join(details)
 
 # from django.db import models
 # from client_profile.models import Product, PromoPlan
