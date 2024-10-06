@@ -137,7 +137,6 @@ class ScrapedData(models.Model):
     def __str__(self):
         return (
             f"Scraped data for Product {self.product.TITLE} "
-            f"(ASIN: {self.product.ASIN}) at {self.scraped_at}: "
             f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}, "
             f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}, "
             f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}, "
