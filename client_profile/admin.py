@@ -1,28 +1,5 @@
-# from django.contrib import admin
-# from .models import Profile, Product, Photo
-
-# class PhotoInline(admin.TabularInline):
-#     model = Photo
-#     extra = 1
-
-# class ProductInline(admin.TabularInline):
-#     model = Product
-#     extra = 1
-
-# class ProfileAdmin(admin.ModelAdmin):
-#     inlines = [ProductInline]
-
-# class ProductAdmin(admin.ModelAdmin):
-#     inlines = [PhotoInline]
-
-# admin.site.register(Profile, ProfileAdmin)
-# admin.site.register(Product, ProductAdmin)
-# admin.site.register(Photo)
-
-
-
 from django.contrib import admin
-from .models import Profile, Product, Photo, Account, ProductAccountLink, Product, PromoPlan, Brand, Category, Subcategory #Keyword
+from .models import Profile, Product, Photo, Account, Account_id, ProductAccountLink, ProductAccountLinkId, Product, PromoPlan, Brand, Category, Subcategory #Keyword
 
 
 class PhotoInline(admin.TabularInline):
@@ -33,9 +10,10 @@ class ProductAccountLinkInline(admin.TabularInline):
     model = ProductAccountLink
     extra = 1
 
-# class KeywordInline(admin.TabularInline):
-#     model = Product.keywords.through
-#     extra = 1
+class ProductAccountLinkIdInline(admin.TabularInline):
+    model = ProductAccountLinkId
+    extra = 1
+
 
 class ProductInline(admin.TabularInline):
     model = Product
@@ -45,10 +23,10 @@ class ProfileAdmin(admin.ModelAdmin):
     inlines = [ProductInline]
 
 class ProductAdmin(admin.ModelAdmin):
-    inlines = [PhotoInline, ProductAccountLinkInline] #, KeywordInline
-    list_display = ('TITLE', 'description', 'RSP', 'RSP_VAT', 'profile', 'ASIN', 'category', 'subcategory', 'brand')  # Add new fields
+    inlines = [PhotoInline, ProductAccountLinkInline, ProductAccountLinkIdInline] #, KeywordInline
+    list_display = ('TITLE', 'description', 'RSP', 'RSP_VAT', 'profile', 'category', 'subcategory', 'brand')  # Add new fields
     list_filter = ('category', 'subcategory', 'brand')  # Add new filters
-    search_fields = ('TITLE', 'description', 'ASIN', 'category__name', 'subcategory__name', 'brand__name')  # Add new fields
+    search_fields = ('TITLE', 'description', 'category__name', 'subcategory__name', 'brand__name')  # Add new fields
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)
@@ -75,7 +53,9 @@ admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Photo)
 admin.site.register(Account)
+admin.site.register(Account_id)
 admin.site.register(ProductAccountLink)
+admin.site.register(ProductAccountLinkId)
 # admin.site.register(Keyword)
 admin.site.register(PromoPlan, PromoPlanAdmin)
 admin.site.register(Category, CategoryAdmin)

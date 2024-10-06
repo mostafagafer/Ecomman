@@ -1,17 +1,20 @@
 from celery import shared_task
 from .models import Product, ScrapedData
-from .selenium_codes.Scrapper_functions import scrape_prices_from_dawa, scrape_prices_from_nahdi, scrape_prices_from_amazon
+from .selenium_codes.Scrapper_functions import scrape_prices_from_dawa, scrape_prices_from_nahdi, scrape_prices_from_amazon 
+from .selenium_codes.Requests_functions import *
 import random
 import psutil
 import time
 import logging
+import aiohttp
+import asyncio
 
 logger = logging.getLogger(__name__)
 
 
 
 @shared_task
-def scrape_prices_task(sample_size=50):
+def scrape_prices_task(sample_size=20):
     try:
         # Fetch all products
         all_products = Product.objects.all()
@@ -22,18 +25,39 @@ def scrape_prices_task(sample_size=50):
         else:
             products = all_products
         
-        # Extract URLs from the sample products
-        dawa_urls = [link.url for product in products for link in product.account_links.filter(account__name='dawa')]
-        nahdi_urls = [link.url for product in products for link in product.account_links.filter(account__name='nahdi')]
-        amazon_urls = [link.url for product in products for link in product.account_links.filter(account__name='amazon')]
+        # # Extract URLs from the sample products
+        # dawa_urls = [link.url for product in products for link in product.account_links.filter(account__name='dawa')]
+        # nahdi_urls = [link.url for product in products for link in product.account_links.filter(account__name='nahdi')]
+        # amazon_urls = [link.url for product in products for link in product.account_links.filter(account__name='amazon')]
         
+        # Extract Identifiers from the sample products
+        dawa_id = [link.identifier for product in products for link in product.account_id_links.filter(account_id__name='dawa')]
+        nahdi_id = [link.identifier for product in products for link in product.account_id_links.filter(account_id__name='nahdi')]
+        amazon_id = [link.identifier for product in products for link in product.account_id_links.filter(account_id__name='amazon')]
 
+
+        # # Scrape prices from each source
+        # prices_dawa = scrape_prices_from_dawa(dawa_urls)
+        # prices_nahdi = scrape_prices_from_nahdi(nahdi_urls)
+        # prices_amazon, amazon_shipping, amazon_sold = scrape_prices_from_amazon(amazon_urls)
+        loop = asyncio.get_event_loop()
+        prices_dawa = loop.run_until_complete(get_dawa_prices(dawa_id))
+        for query, prices in zip(dawa_id, prices_dawa):
+            print(f"Query Dawa'{query}' Prices: {prices}")
+
+        prices_nahdi = loop.run_until_complete(get_nahdi_prices(nahdi_id))
+        for query, prices in zip(nahdi_id, prices_nahdi):
+            print(f"Query Nahdi'{query}' Prices: {prices}")
+        
+        prices_amazon, amazon_shipping, amazon_sold = loop.run_until_complete(get_amazon_product_details(amazon_id))
+        for query, prices in zip(amazon_id, prices_amazon):
+            print(f"Query Amazon'{query}' Prices: {prices}")
+     
 
         # Scrape prices from each source
-        prices_dawa = scrape_prices_from_dawa(dawa_urls)
-        prices_nahdi = scrape_prices_from_nahdi(nahdi_urls)
-        prices_amazon, amazon_shipping, amazon_sold = scrape_prices_from_amazon(amazon_urls)
-
+        # prices_dawa = asyncio.run(get_dawa_prices(dawa_id))
+        # prices_nahdi = asyncio.run(get_dawa_prices(nahdi_id))
+        # prices_amazon, amazon_shipping, amazon_sold = asyncio.run(get_amazon_product_details(amazon_id))
 
         # Fill empty lists with zeros or defaults
         max_length = max(len(prices_dawa), len(prices_nahdi), len(prices_amazon), len(amazon_shipping), len(amazon_sold))

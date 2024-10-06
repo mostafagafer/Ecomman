@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from scrapper.models import ScrapedData
-from client_profile.models import Profile, PinnedTable #s,Product, Subcategory, Brand, PromoPlan
+from client_profile.models import Profile, PinnedTable #,Product, Subcategory, Brand, PromoPlan
 # from django.db.models import OuterRef, Subquery, Max, F, Value as V, FloatField
 from django.db.models import OuterRef, Max, Subquery
 from django.contrib.auth.decorators import login_required
@@ -104,8 +104,10 @@ def price(request):
     ).select_related('product')
 
 
-        # Get user accounts
-        user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
+        # # Get user accounts using accounts and urls
+        # user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
+        # Get user accounts and filter out None values
+        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
 
         # Define all possible dynamic columns
         all_columns = [
@@ -117,15 +119,25 @@ def price(request):
             {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
         ]
 
-        # Filter columns to include only those related to user accounts (both price and compliance)
+        # # Filter columns to include only those related to user accounts (both price and compliance)
+        # columns = [
+        #     col for col in all_columns
+        #     if col['name'] in [
+        #         f"{account.lower()}_price" for account in user_accounts
+        #     ] or col['name'] in [
+        #         f"{account.lower()}_compliance_flag" for account in user_accounts
+        #     ]
+        # ]
+
         columns = [
             col for col in all_columns
             if col['name'] in [
-                f"{account.lower()}_price" for account in user_accounts
+                f"{account.lower()}_price" for account in user_accounts if account
             ] or col['name'] in [
-                f"{account.lower()}_compliance_flag" for account in user_accounts
+                f"{account.lower()}_compliance_flag" for account in user_accounts if account
             ]
         ]
+
 
         # Check if "amazon" is in the user's accounts
         show_amazon_sold_by = 'amazon' in user_accounts

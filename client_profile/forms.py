@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Profile, Product, ProductAccountLink, Photo, Account, PromoPlan #, Keyword, ProductKeyword
+from .models import Profile, Product, ProductAccountLink, ProductAccountLinkId, Photo, Account,Account_id, PromoPlan #, Keyword, ProductKeyword
 from django.contrib.auth.models import User
 
 class UserForm(forms.ModelForm):
@@ -13,6 +13,35 @@ class ProfileForm(forms.ModelForm):
         model = Profile
         fields = ['client','plan']
         
+class ProductAccountIdLinkForm(forms.ModelForm):
+    account = forms.ModelChoiceField(queryset=Account_id.objects.all(), required=True)
+
+    class Meta:
+        model = ProductAccountLinkId
+        fields = ['account', 'identifier']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['account'].label = 'Account (required)'
+        self.fields['identifier'].label = 'Identifier (required)'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Ensure account is selected
+        if not cleaned_data.get('account'):
+            self.add_error('account', 'Account is required')
+        # Ensure identifier is provided
+        if not cleaned_data.get('identifier'):
+            self.add_error('identifier', 'Identifier is required')
+        return cleaned_data
+
+ProductAccountIdLinkFormSet = inlineformset_factory(
+    Product,
+    ProductAccountLinkId,
+    form=ProductAccountIdLinkForm,
+    extra=1,
+    can_delete=True
+)
 
 class ProductAccountLinkForm(forms.ModelForm):
     account = forms.ModelChoiceField(queryset=Account.objects.all(), required=True)
@@ -42,7 +71,7 @@ ProductAccountLinkFormSet = inlineformset_factory(
 class PhotoForm(forms.ModelForm):
     class Meta:
         model = Photo
-        fields = ['image', 'image_description']
+        fields = ['image']
 
 PhotoFormSet = inlineformset_factory(Product, Photo, form=PhotoForm, extra=1, can_delete=True)
 
@@ -95,7 +124,7 @@ class PromoPlanForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['ASIN', 'TITLE', 'description', 'RSP', 'RSP_VAT', 'category', 'subcategory', 'brand']
+        fields = ['TITLE', 'description', 'RSP', 'RSP_VAT', 'category', 'subcategory', 'brand']
 # from django import forms
 # from django.forms import inlineformset_factory
 # from .models import Profile, Product, ProductAccountLink, Photo, Account, ACCOUNT_URL_REQUIREMENTS  

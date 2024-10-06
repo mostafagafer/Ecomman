@@ -1,8 +1,10 @@
 venv/
 media/
 static/
+staticfiles/
 venv/
 SourceData/
+Xrequests_scripts/
 __pycache__
 .env
 celery_beat.log
@@ -13,3 +15,7 @@ test.py
 LesEtaps.txt
 .DS_Store
 
+client_profile/templates/client_profile/X_product_form copy.html 
+client_profile/templates/client_profile/X_product_form.html 
+client_profile/templates/client_profile/x_table.html 
+client_profile/templates/client_profile/x_user_scraped_data.html

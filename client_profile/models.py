@@ -15,6 +15,9 @@ ACCOUNT_URL_VALIDATIONS = {
     'nahdi': 'nahdionline.com',
 }
 
+ACCOUNT_KEY = ['amazon', 'dawa', 'nahdi']
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     client = models.CharField(max_length=50)
@@ -31,22 +34,12 @@ class Account(models.Model):
     def __str__(self):
         return self.name
 
-# class Keyword(models.Model):
-#     name = models.CharField(max_length=100, unique=True)
+class Account_id(models.Model):
+    name = models.CharField(max_length=100, choices=[(key, key) for key in ACCOUNT_KEY])
 
-#     def __str__(self):
-#         return self.name
-
-# class Category(models.Model):
-#     name = models.CharField(max_length=30, null=True, blank=True)
-
-# class Subcategory(models.Model):
-#     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-#     name = models.CharField(max_length=30, null=True, blank=True) 
-
-# class Brand(models.Model):
-#     Subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE)
-#     name = models.CharField(max_length=30, null=True, blank=True)
+    def __str__(self):
+        return self.name
+    
 
 class Brand(models.Model):
     name = models.CharField(max_length=100)
@@ -70,23 +63,30 @@ class Subcategory(models.Model):
 class Product(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='products')
     TITLE = models.CharField(max_length=100)
-    ASIN = models.CharField(max_length=100)
+    # ASIN = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     RSP= models.FloatField()
     RSP_VAT= models.FloatField()
     accounts = models.ManyToManyField(Account, through='ProductAccountLink')
+    accounts_id = models.ManyToManyField(Account_id, through='ProductAccountLinkId')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
 
 
     def __str__(self):
-        return f"{self.ASIN} - {self.TITLE}"
+        return f"{self.TITLE}"
 
-# class ProductKeyword(models.Model):
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     keyword = models.ForeignKey(Keyword, on_delete=models.CASCADE)
-    
+class ProductAccountLinkId(models.Model):
+    product = models.ForeignKey(Product, related_name='account_id_links', on_delete=models.CASCADE)
+    account = models.ForeignKey(Account_id, related_name='product_id_links', on_delete=models.CASCADE)
+    identifier = models.CharField(max_length=300)
+
+    def __str__(self):
+        return f"{self.product.TITLE} - {self.account.name} - {self.identifier}"
+
+
+
 class ProductAccountLink(models.Model):
     product = models.ForeignKey(Product, related_name='account_links', on_delete=models.CASCADE)
     account = models.ForeignKey(Account, related_name='product_links', on_delete=models.CASCADE)
@@ -105,6 +105,7 @@ class ProductAccountLink(models.Model):
     def __str__(self):
         return f"{self.product.TITLE} - {self.account.name}"
             
+
 class PinnedTable(models.Model):
     table_name = models.CharField(max_length=100)
 
@@ -119,10 +120,9 @@ def product_photo_upload_path(instance, filename):
 class Photo(models.Model):
     product = models.ForeignKey(Product, related_name='photos', on_delete=models.CASCADE)
     image = models.ImageField(upload_to=product_photo_upload_path)
-    image_description = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.image_description or "Photo"
+        return str(self.image)
 
 
 

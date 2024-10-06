@@ -154,7 +154,7 @@ DATABASES = {
     }
 }
 
-POSTGRES_LOCALLY = True
+POSTGRES_LOCALLY = False
 if ENVIROMENT=='prodction' or POSTGRES_LOCALLY==True:
     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
@@ -242,7 +242,7 @@ else:
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-3-hours': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 43200.0,  # 12 hours
+        'schedule': 300.0,  # 12 hours
     },
 }
 
