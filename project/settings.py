@@ -242,7 +242,7 @@ else:
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-3-hours': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 300.0,  # 12 hours
+        'schedule': 10800.0,  # 12 hours
     },
 }
 
