@@ -241,9 +241,9 @@ else:
 # CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_BEAT_SCHEDULE = {
-    'scrape-prices-every-3-hours': {
+    'scrape-prices-every-4-hours': {
         'task': 'scrapper.tasks.scrape_prices_task',
-        'schedule': 600.0,  # 12 hours
+        'schedule': 14400.0,  # 4 hours
     },
 }
 
