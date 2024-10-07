@@ -80,7 +80,7 @@ class Product(models.Model):
 class ProductAccountLinkId(models.Model):
     product = models.ForeignKey(Product, related_name='account_id_links', on_delete=models.CASCADE)
     account = models.ForeignKey(Account_id, related_name='product_id_links', on_delete=models.CASCADE)
-    identifier = models.CharField(max_length=300)
+    identifier = models.CharField(max_length=300, blank=True, null=True)
 
     def __str__(self):
         return f"{self.product.TITLE} - {self.account.name} - {self.identifier}"
