@@ -17,7 +17,7 @@ import dj_database_url
 env = Env()
 
 Env.read_env()
-ENVIROMENT = env('ENVIROMENT')
+ENVIRONMENT = env('ENVIRONMENT', default='development')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIROMENT == 'development':
+if ENVIRONMENT == 'development':
     DEBUG = True
 else:   
     DEBUG = False
@@ -155,8 +155,10 @@ DATABASES = {
 }
 
 POSTGRES_LOCALLY = False
-if ENVIROMENT=='prodction' or POSTGRES_LOCALLY==True:
+if ENVIRONMENT == 'production' or POSTGRES_LOCALLY:
     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
+
+print("Active Database:", DATABASES['default'])
 
 # DATABASES = {
 #     'default': {
@@ -214,7 +216,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE="whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = '/media/'
-if ENVIROMENT == 'development':
+if ENVIRONMENT == 'development':
     MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 else:
     DEFAULT_FILE_STORAGE= 'cloudinary_storage.storage.MediaCloudinaryStorage'
@@ -228,8 +230,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery settings
 # CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
-# ENVIROMENT = 'develpment'
-if ENVIROMENT == 'development':
+# ENVIRONMENT = 'develpment'
+if ENVIRONMENT == 'development':
     CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
     CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 else:
