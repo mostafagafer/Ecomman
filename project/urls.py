@@ -10,7 +10,6 @@ urlpatterns = [
     path('contact/', include('contact.urls',namespace='contact')),
     path('client_profile/', include('client_profile.urls',namespace='client_profile')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
-
     path('dashboard/', include('dashboard.urls')),
 
 

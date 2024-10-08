@@ -293,19 +293,4 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 
-# print("Active Database:", DATABASES['default'])
-# print("the enviroment:", ENVIRONMENT)
-# print('CELERY_BROKER_URL',CELERY_BROKER_URL)
-# print('CELERY_RESULT_BACKEND',CELERY_RESULT_BACKEND)
-# {'NAME': 'railway',
-#   'USER': 'postgres',
-#     'PASSWORD': 'ZmALpaeCzxyCyVaIwsekXhXyGXgUhvYN',
-#       'HOST': 'autorack.proxy.rlwy.net',
-#         'PORT': 51101,
-#           'CONN_MAX_AGE': 0,
-#             'CONN_HEALTH_CHECKS': False,
-#               'DISABLE_SERVER_SIDE_CURSORS': False,
-#                 'ENGINE': 'django.db.backends.postgresql'}
-
-
 

@@ -10,6 +10,63 @@ import pandas as pd
 
 
 @login_required
+def performance_view2(request):
+    try:
+        profile = Profile.objects.get(user=request.user)
+
+        # Fetch all scraped data for the products associated with the logged-in user's profile
+        scraped_data = ScrapedData.objects.filter(
+            product__profile=profile
+        )
+
+        # Get user accounts
+        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+
+        # Define all possible dynamic columns
+        all_columns = [
+            {'name': 'dawa_price', 'header': 'Dawa Price'},
+            {'name': 'nahdi_price', 'header': 'Nahdi Price'},
+            {'name': 'amazon_price', 'header': 'Amazon.SA Price'},
+            {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
+            {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
+            {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
+        ]
+
+        columns = [
+            col for col in all_columns
+            if col['name'] in [
+                f"{account.lower()}_price" for account in user_accounts if account
+            ] or col['name'] in [
+                f"{account.lower()}_compliance_flag" for account in user_accounts if account
+            ]
+        ]
+
+        # Check if "amazon" is in the user's accounts
+        show_amazon_sold_by = 'amazon' in user_accounts
+
+        # Check if the current table is pinned by the user
+        is_table_pinned = profile.pinned_tables.filter(table_name="PerformanceData").exists()        
+        # Prepare the context with additional fields like OPPS, PCS, and product title
+        context = {
+            'scraped_data': scraped_data,
+            'columns': columns,
+            'show_amazon_sold_by': show_amazon_sold_by,  # Pass the boolean to the template
+            'is_table_pinned': is_table_pinned,
+            'segment': 'scraped_data',
+        }
+        print(scraped_data.count())
+
+        return render(request, 'dashboard/product_performance2.html', context)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return render(request, 'dashboard/product_performance2.html', {
+            'error_message': 'An error occurred while retrieving the data.'
+        })
+
+
+
+@login_required
 def dashboard_view(request):
     profile = Profile.objects.get(user=request.user)
     scraped_data = ScrapedData.objects.filter(product__profile=profile)
@@ -21,6 +78,10 @@ def dashboard_view(request):
         'Category': [item.product.category for item in scraped_data],
         'Subcategory': [item.product.subcategory for item in scraped_data],
         'Product': [item.product.TITLE for item in scraped_data],
+        'amazon_price': [item.amazon_price for item in scraped_data],
+        'nahdi_price': [item.nahdi_price for item in scraped_data],
+        'dawa_price': [item.dawa_price for item in scraped_data],
+
     }
 
     # Initialize the Dash app
@@ -41,25 +102,24 @@ def performance_view(request):
         )
 
         # Get user accounts
-        user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
+        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
 
         # Define all possible dynamic columns
         all_columns = [
             {'name': 'dawa_price', 'header': 'Dawa Price'},
             {'name': 'nahdi_price', 'header': 'Nahdi Price'},
-            {'name': 'amazon_price', 'header': 'Amazon Price'},
+            {'name': 'amazon_price', 'header': 'Amazon.SA Price'},
             {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
             {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
             {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
         ]
 
-        # Filter columns to include only those related to user accounts (both price and compliance)
         columns = [
             col for col in all_columns
             if col['name'] in [
-                f"{account.lower()}_price" for account in user_accounts
+                f"{account.lower()}_price" for account in user_accounts if account
             ] or col['name'] in [
-                f"{account.lower()}_compliance_flag" for account in user_accounts
+                f"{account.lower()}_compliance_flag" for account in user_accounts if account
             ]
         ]
 
@@ -113,7 +173,7 @@ def price(request):
         all_columns = [
             {'name': 'dawa_price', 'header': 'Dawa Price'},
             {'name': 'nahdi_price', 'header': 'Nahdi Price'},
-            {'name': 'amazon_price', 'header': 'Amazon Price'},
+            {'name': 'amazon_price', 'header': 'Amazon.SA Price'},
             {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
             {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
             {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
@@ -215,28 +275,50 @@ def index(request):
       ).select_related('product')
 
 
-      # Get user accounts
-      user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
+    #   # Get user accounts
+    #   user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
 
-      # Define all possible dynamic columns
+    #   # Define all possible dynamic columns
+    #   all_columns = [
+    #       {'name': 'dawa_price', 'header': 'Dawa Price'},
+    #       {'name': 'nahdi_price', 'header': 'Nahdi Price'},
+    #       {'name': 'amazon_price', 'header': 'Amazon Price'},
+    #       {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
+    #       {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
+    #       {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
+    #   ]
+
+    #   # Filter columns to include only those related to user accounts (both price and compliance)
+    #   columns = [
+    #     col for col in all_columns
+    #     if col['name'] in [
+    #         f"{account.lower()}_price" for account in user_accounts
+    #     ] or col['name'] in [
+    #         f"{account.lower()}_compliance_flag" for account in user_accounts
+    #     ]
+    # ]
+    # Get user accounts
+      user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+
+        # Define all possible dynamic columns
       all_columns = [
-          {'name': 'dawa_price', 'header': 'Dawa Price'},
-          {'name': 'nahdi_price', 'header': 'Nahdi Price'},
-          {'name': 'amazon_price', 'header': 'Amazon Price'},
-          {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
-          {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
-          {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
-      ]
+            {'name': 'dawa_price', 'header': 'Dawa Price'},
+            {'name': 'nahdi_price', 'header': 'Nahdi Price'},
+            {'name': 'amazon_price', 'header': 'Amazon.SA Price'},
+            {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
+            {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
+            {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
+        ]
 
-      # Filter columns to include only those related to user accounts (both price and compliance)
       columns = [
-          col for col in all_columns
-          if col['name'] in [
-              f"{account.lower()}_price" for account in user_accounts
-          ] or col['name'] in [
-              f"{account.lower()}_compliance_flag" for account in user_accounts
-          ]
-      ]
+            col for col in all_columns
+            if col['name'] in [
+                f"{account.lower()}_price" for account in user_accounts if account
+            ] or col['name'] in [
+                f"{account.lower()}_compliance_flag" for account in user_accounts if account
+            ]
+        ]
+
 
       # Check if "amazon" is in the user's accounts
       show_amazon_sold_by = 'amazon' in user_accounts
@@ -298,12 +380,12 @@ def index(request):
           'summary_data': summary_data,  # Summary for the latest and previous average opps
       }
 
-      return render(request, 'pages/index.html', context)
+      return render(request, 'dashboard/index.html', context)
 
   except Exception as e:
       # Log the exception or handle it as needed
       print(f"An error occurred: {e}")
-      return render(request, 'pages/index.html', {
+      return render(request, 'dashboard/index.html', {
           'error_message': 'An error occurred while retrieving the data.'
       })
 

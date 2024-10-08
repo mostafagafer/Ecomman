@@ -68,6 +68,10 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 </style>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
+  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+</svg>
 
 <div class="container-fluid py-4">
 
@@ -96,7 +100,7 @@ input:checked + .slider:before {
                 <tr>
                   <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Product</th>
                   <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">RSV|RSV+VAT</th>
-                  <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">My Price</th>
+                  <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Reference Price</th>
                   <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">On Promo</th>
                   
                   {% for column in columns %}
@@ -105,16 +109,7 @@ input:checked + .slider:before {
                   {% endif %}
                 {% endfor %}
                         
-                  {% if show_amazon_sold_by %}
-                      <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">AMZ Sold By</th>
-                  {% endif %}
-
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Update date</th>
-
-
-
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">OPPS</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Details</th>
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">PDS</th>
                 </tr>
               </thead>
                 <tbody>
@@ -151,40 +146,39 @@ input:checked + .slider:before {
                       </td>
 
                       {% for column in columns %}
-                        {% if "_price" in column.name %}
-                          <td class="align-middle text-center text-sm">
-                            {# Get the corresponding compliance flag dynamically using the custom replace filter #}
+                      {% if "_price" in column.name %}
+                        <td class="align-middle text-center text-sm">
+                          <div class="d-flex align-items-center justify-content-center">
                             {% with compliance_flag=column.name|replace:"price,compliance_flag" %}
                               {% if data|get_item2:compliance_flag %}
-                                <span >{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
+                                <span>{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
                               {% else %}
                                 <span class="badge bg-danger">{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
                               {% endif %}
+                              
+                              {% if column.name == "amazon_price" and data.amazon_sold_by != "Amazon.sa" %}
+                                <svg 
+                                  xmlns="http://www.w3.org/2000/svg" 
+                                  width="16" 
+                                  height="16" 
+                                  fill="red" 
+                                  class="bi bi-exclamation-circle ms-2" 
+                                  viewBox="0 0 16 16"
+                                  data-bs-toggle="popover" 
+                                  data-bs-placement="right" 
+                                  data-bs-content="Sold by: {{ data.amazon_sold_by }}"
+                                  style="cursor: pointer;">
+                                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+                                </svg>
+                              {% endif %}
+                              
                             {% endwith %}
-                          </td>
-                        {% endif %}
-                      {% endfor %}
-
-
-                      {% if show_amazon_sold_by %}
-                      <td class="align-middle text-center text-sm">
-                          {% if data.amazon_sold_by != "Amazon.sa" %}
-                              <span style="color: red;">{{ data.amazon_sold_by }}</span>
-                          {% else %}
-                              {{ data.amazon_sold_by }}
-                          {% endif %}
-                      </td>
+                          </div>
+                        </td>
                       {% endif %}
-            
-                      <td class="align-middle text-center text-sm">
-                          <div >
-
-                          <div class="d-flex flex-column justify-content-center">
-                          
-                          {{ data.scraped_at|date:"F j, Y, g:i a" }}       
-                          </div>
-                          </div>
-                      </td> 
+                    {% endfor %}
+                                                                                            
                       <td class="align-middle text-center text-sm">
                         <div class="progress-wrapper w-75 mx-auto">
                           <div class="progress-info">
@@ -197,7 +191,7 @@ input:checked + .slider:before {
                         </div>
                       </td>
                       
-                      <td class="align-middle text-center text-sm">
+                      <!-- <td class="align-middle text-center text-sm">
                         <div >
 
                         <div class="d-flex flex-column justify-content-center">
@@ -211,7 +205,7 @@ input:checked + .slider:before {
                       
                         </div>
                         </div>
-                      </td> 
+                      </td>  -->
                   </tr>
                     {% endfor %}
 
