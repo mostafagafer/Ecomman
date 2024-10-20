@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import aiohttp
 import asyncio
 import json
-
+import logging
 
 # Function to fetch and parse Amazon product details asynchronously
 async def fetch_amazon_product(session, product_id):
@@ -37,23 +37,40 @@ async def fetch_amazon_product(session, product_id):
         async with session.get(url, headers=headers) as response:
             content = await response.text()
             soup = BeautifulSoup(content, 'html.parser')
-            
-            # Extract the price
+
+            # Try to find the price
+            price = None
             price_element = soup.find(class_='reinventPricePriceToPayMargin')
-            price = price_element.get_text(strip=True).replace("\n", ".").replace("SAR", "").strip() if price_element else None
+            if not price_element:
+                logging.warning(f"Price not found for {product_id}, trying alternative class.")
+                price_element = soup.find(id='priceblock_ourprice')  # Alternative class/id for price
+            if price_element:
+                price = price_element.get_text(strip=True).replace("\n", ".").replace("SAR", "").strip()
 
-            # Extract shipping info
+            # Try to find shipping info
+            shipping_info = None
             ship_element = soup.find(class_='offer-display-feature-text-message')
-            shipping_info = ship_element.get_text(strip=True) if ship_element else None
+            if not ship_element:
+                logging.warning(f"Shipping info not found for {product_id}, trying alternative class.")
+                ship_element = soup.find(id='merchant-info')  # Alternative class/id for shipping
+            if ship_element:
+                shipping_info = ship_element.get_text(strip=True)
 
-            # Extract 'Sold By' info (if available)
+            # Try to find 'Sold By' info
+            sold_by_info = None
             sold_by_elements = soup.find_all(class_='offer-display-feature-text-message')
-            sold_by_info = sold_by_elements[1].get_text(strip=True) if len(sold_by_elements) > 1 else None
+            if len(sold_by_elements) > 1:
+                sold_by_info = sold_by_elements[1].get_text(strip=True)
+            else:
+                logging.warning(f"Sold by info not found for {product_id}, trying alternative approach.")
+                sold_by_info = soup.find(id='sellerProfileTriggerId')  # Alternative class/id for sold by
 
+            # Log details for debugging
+            logging.info(f"Product ID: {product_id}, Price: {price}, Shipping: {shipping_info}, Sold By: {sold_by_info}")
             return price, shipping_info, sold_by_info
 
     except Exception as e:
-        print(f"Error fetching data for {product_id}: {e}")
+        logging.error(f"Error fetching data for {product_id}: {e}")
         return None, None, None
 
 # Asynchronous task to fetch and return data for multiple Amazon product IDs
@@ -64,8 +81,8 @@ async def get_amazon_product_details(product_ids):
         # Wait for all tasks to complete
         responses = await asyncio.gather(*tasks)
         
-        # Unzip the responses into separate lists
-        prices_amazon, amazon_shipping, amazon_sold = map(list, zip(*responses))
+        # Unzip the responses into separate lists, handling None cases if they arise
+        prices_amazon, amazon_shipping, amazon_sold = map(list, zip(*responses)) if responses else ([], [], [])
         
         return prices_amazon, amazon_shipping, amazon_sold
 

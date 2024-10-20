@@ -59,6 +59,40 @@ class ScrapedData(models.Model):
         ratio = self.nahdi_price / self.final_price
         return ratio
 
+
+
+    @cached_property
+    def amazon_compliance_score(self):
+        if self.final_price is None or self.amazon_price is None:
+            return False
+        
+        abs_diff = abs(self.final_price-self.amazon_price)
+        complience_score = (1-(abs_diff/(0.5*self.final_price)))
+
+        return complience_score
+
+    @cached_property
+    def dawa_compliance_score(self):
+        if self.final_price is None or self.dawa_price is None:
+            return False
+        
+        abs_diff = abs(self.final_price-self.dawa_price)
+        complience_score = (1-(abs_diff/(0.5*self.final_price)))
+
+        return complience_score
+    
+    @cached_property
+    def nahdi_compliance_score(self):
+        if self.final_price is None or self.nahdi_price is None:
+            return False
+        
+        abs_diff = abs(self.final_price-self.nahdi_price)
+        complience_score = (1-(abs_diff/(0.5*self.final_price)))
+
+        return complience_score
+
+
+
     @cached_property
     def amazon_compliance_flag(self):
         if self.final_price is None or self.amazon_price is None:
@@ -68,7 +102,7 @@ class ScrapedData(models.Model):
         upper_limit = self.final_price * 1.1
 
         return lower_limit <= self.amazon_price <= upper_limit
-
+    
     @cached_property
     def dawa_compliance_flag(self):
         if self.final_price is None or self.dawa_price is None:
@@ -99,7 +133,13 @@ class ScrapedData(models.Model):
             return 0
         
         average_deviation = sum(abs(price - self.final_price) for price in store_prices) / len(store_prices)
-        pds = (1 - (average_deviation / self.final_price)) * 100
+
+        # Old PDS 
+        # pds = (1 - (average_deviation / self.final_price)) * 100
+        
+        # New PDS as per mahmoud 19oct/2024
+        pds = (average_deviation / self.final_price)*100
+
         return pds
     
     @cached_property
@@ -112,24 +152,30 @@ class ScrapedData(models.Model):
         
         return (compliant_stores / total_stores) * 100
 
-    # @property
-    # def pcs(self):
-    #     # Calculate Price Compliance Score (PCS) as the average of non-None compliance scores
-    #     compliance_flags = [
-    #         self.amazon_compliance_flag,
-    #         self.dawa_compliance_flag,
-    #         self.nahdi_compliance_flag
-    #     ]
-    #     valid_flags = [flag for flag in compliance_flags if flag is not None]
+    @cached_property
+    def account_deviation_score(self):
+        """Calculates the average deviation score (ADS) from all compliance scores."""
+        compliance_scores = [
+            self.amazon_compliance_score,
+            self.dawa_compliance_score,
+            self.nahdi_compliance_score
+        ]
+        
+        # Filter out None values and calculate the average
+        valid_scores = [score for score in compliance_scores if score is not None]
+        
+        if valid_scores:
+            return (sum(valid_scores) / len(valid_scores))*100
+        return None  # Return None if no valid scores
 
-    #     if not valid_flags:
-    #         return 0  # Avoid division by zero
-
-    #     return sum(valid_flags) / len(valid_flags)
 
     @cached_property
     def opps(self):
-        opps = (self.price_deviation_score+self.pcs)/2
+
+        # old opps
+        # opps = (self.price_deviation_score+self.pcs)/2
+        # New opps
+        opps = ((100-self.price_deviation_score)+self.account_deviation_score)/2
         return opps
         
 
@@ -177,7 +223,11 @@ class ScrapedData(models.Model):
             f"Amazon Compliance Ratio: {self.amazon_ratio:.2f}" if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A",
             f"Dawa Compliance Ratio: {self.dawa_ratio:.2f}" if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A",
             f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f}" if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A",
+            f"Amazon Compliance Score: {self.amazon_compliance_score:.2f}" if self.amazon_compliance_score is not None else "Amazon Compliance Score: N/A",
+            f"Dawa Compliance Score: {self.dawa_compliance_score:.2f}" if self.dawa_compliance_score is not None else "Dawa Compliance Score: N/A",
+            f"Nahdi Compliance Sccore: {self.nahdi_compliance_score:.2f}" if self.nahdi_compliance_score is not None else "Nahdi Compliance Score: N/A",
             f"Price Compliance Score: {self.pcs:.2f}%",
+            f"ADS: {self.account_deviation_score:.2f} " if self.account_deviation_score is not None else "ADS: N/A"
             f"Online Price Performance Score: {self.opps:.2f}%"
         ]
         

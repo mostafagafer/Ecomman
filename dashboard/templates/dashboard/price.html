@@ -68,16 +68,30 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 </style>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
-  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
-</svg>
+
+
+
+
+<div class="container-fluid py-4">
+  <div class="row mt-4">
+    <div class>
+
+      <form action="{% url 'dashboard:trigger_scrape_for_user_products' %}" method="post">
+        {% csrf_token %}
+        <button class="btn btn-lg btn-primary" type="submit">Update Price Now</button>
+      </form>
+
+    </div>
+  </div>
+  
+</div>
+
 
 <div class="container-fluid py-4">
 
   <div class="row">
     <div class="row mt-4">
-      <h1>Current Price Status</h1>
+      <h1>Current Price Status </h1>
     </div>
 
     <div class="col-12">
@@ -87,6 +101,13 @@ input:checked + .slider:before {
             <div class="col-lg-6 col-7">
               <p class="text-sm mb-0">
                 The table's last update was on <span>{{ latest_scraped_date|date:"F j, Y, g:i a" }}</span>
+
+              <p class="text-sm mb-0">
+                Your Cumulative Price Deviation Percentage <span style="font-weight:bold;">17.5</span>
+
+              <p class="text-sm mb-0">
+                Your Cumulative Account Deviation  <span style="font-weight:bold;">20.20</span>
+    
             </p>
             </div>
 
@@ -109,8 +130,8 @@ input:checked + .slider:before {
                   {% endif %}
                 {% endfor %}
                         
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">PDS</th>
-                </tr>
+                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">PDS</th>
+              </tr>
               </thead>
                 <tbody>
                   {% for data in max_scraped_data  %}
@@ -162,15 +183,15 @@ input:checked + .slider:before {
                                   width="16" 
                                   height="16" 
                                   fill="red" 
-                                  class="bi bi-exclamation-circle ms-2" 
+                                  class="bi bi-shop ms-2" 
                                   viewBox="0 0 16 16"
                                   data-bs-toggle="popover" 
                                   data-bs-placement="right" 
                                   data-bs-content="Sold by: {{ data.amazon_sold_by }}"
                                   style="cursor: pointer;">
-                                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+                                  <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.37 2.37 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0M1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5M4 15h3v-5H4zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm3 0h-2v3h2z"/>
                                 </svg>
+
                               {% endif %}
                               
                             {% endwith %}
@@ -183,7 +204,7 @@ input:checked + .slider:before {
                         <div class="progress-wrapper w-75 mx-auto">
                           <div class="progress-info">
                           <div class="progress-percentage">
-                          <span class="text-xs font-weight-bold">{{data.opps|floatformat:"2"}}%</span>
+                          <span class="text-xs font-weight-bold">{{data.price_deviation_score|floatformat:"2"}}%</span>
                           </div>
                           </div>
                           <!-- <div class="progress">
@@ -191,21 +212,6 @@ input:checked + .slider:before {
                         </div>
                       </td>
                       
-                      <!-- <td class="align-middle text-center text-sm">
-                        <div >
-
-                        <div class="d-flex flex-column justify-content-center">
-
-                        <button type="button" class="btn btn-secondary" 
-                                              data-bs-toggle="popover" 
-                                              data-bs-placement="left" 
-                                              data-bs-content="Opps value: {{data.opps|floatformat:'2'}}">
-                          Summary
-                        </button>
-                      
-                        </div>
-                        </div>
-                      </td>  -->
                   </tr>
                     {% endfor %}
 
@@ -243,45 +249,7 @@ input:checked + .slider:before {
 
 
     
-            <div class="row" id="OPPS_price_graph">
 
-              <div class="row mt-4">
-                <h1>Dashboard</h1>
-          </div>
-                  <div class="card">
-    
-                    <div class="{% plotly_class name='OPPS_Line' %} card" >
-                        <div class="container-fluid">
-                            <div class="raw md-4">
-                                {% plotly_app name="OPPS_Line" ratio=.45%}
-                            </div>
-                        </div>
-                          <!-- Rounded switch -->
-                          <!-- <div class="col p-4">
-                          <label class="switch">
-                            <input type="checkbox">
-                            <span class="slider round"></span>
-                          </label>
-                    </div>
-                    <div class="col p-4">
-                      <a href="{% url 'dashboard:toggle_pin_table' 'OPPS_price_graph' %}" >
-                          {% if is_table_pinned %}
-                              Unpin Table
-                          {% else %}
-                              Pin Table
-                          {% endif %}
-                      </a>
-                      </div> -->
-
-        
-
-                    </div>
-  
-                  </div>
-
-      
-            
-              </div>
     
 
 

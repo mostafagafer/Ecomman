@@ -1,4 +1,5 @@
 from celery import shared_task
+from client_profile.models import Profile  # Ensure this import matches the app where Profile is located
 from .models import Product, ScrapedData
 from .selenium_codes.Scrapper_functions import scrape_prices_from_dawa, scrape_prices_from_nahdi, scrape_prices_from_amazon 
 from .selenium_codes.Requests_functions import *
@@ -86,64 +87,66 @@ def scrape_prices_task(sample_size=50):
             'error': str(e)
         }
 
-        # # Extract URLs from the sample products
-        # dawa_urls = [link.url for product in products for link in product.account_links.filter(account__name='dawa')]
-        # nahdi_urls = [link.url for product in products for link in product.account_links.filter(account__name='nahdi')]
-        # amazon_urls = [link.url for product in products for link in product.account_links.filter(account__name='amazon')]
 
-        # # Scrape prices from each source
-        # prices_dawa = scrape_prices_from_dawa(dawa_urls)
-        # prices_nahdi = scrape_prices_from_nahdi(nahdi_urls)
-        # prices_amazon, amazon_shipping, amazon_sold = scrape_prices_from_amazon(amazon_urls)
-     
 
-        # Scrape prices from each source
-        # prices_dawa = asyncio.run(get_dawa_prices(dawa_id))
-        # prices_nahdi = asyncio.run(get_dawa_prices(nahdi_id))
-        # prices_amazon, amazon_shipping, amazon_sold = asyncio.run(get_amazon_product_details(amazon_id))
+@shared_task
+def scrape_user_products_task(product_ids):
+    try:
+        # Fetch the products based on the passed IDs
+        products = Product.objects.filter(id__in=product_ids)
+        
+        records_to_create = []
+        records_created = 0
+        loop = asyncio.get_event_loop()
 
-        # Fill empty lists with zeros or defaults
-        # max_length = max(len(prices_dawa), len(prices_nahdi), len(prices_amazon), len(amazon_shipping), len(amazon_sold))
+        for product in products:
+            # Fetch identifiers for the current product
+            dawa_id = [link.identifier for link in product.account_id_links.filter(account_id__name='dawa')]
+            nahdi_id = [link.identifier for link in product.account_id_links.filter(account_id__name='nahdi')]
+            amazon_id = [link.identifier for link in product.account_id_links.filter(account_id__name='amazon')]
 
-        # prices_dawa.extend([None] * (max_length - len(prices_dawa)))
-        # prices_nahdi.extend([None] * (max_length - len(prices_nahdi)))
-        # prices_amazon.extend([None] * (max_length - len(prices_amazon)))
-        # amazon_shipping.extend([None] * (max_length - len(amazon_shipping)))
-        # amazon_sold.extend([None] * (max_length - len(amazon_sold)))
+            # Fetch prices for each identifier
+            price_dawa = loop.run_until_complete(get_dawa_prices(dawa_id)) if dawa_id else [None]
+            price_nahdi = loop.run_until_complete(get_nahdi_prices(nahdi_id)) if nahdi_id else [None]
+            amazon_prices, amazon_shipping, amazon_sold = (loop.run_until_complete(get_amazon_product_details(amazon_id))
+                                                           if amazon_id else ([None], [None], [None]))
 
-        # Create ScrapedData entries for the sample products
-        # records_created = 0
-        # for product, price_dawa, price_nahdi, price_amazon, ship_amazon, sold_amazon in zip(products, prices_dawa, prices_nahdi, prices_amazon, amazon_shipping, amazon_sold):
-        #     ScrapedData.objects.create(
-        #         product=product,
-        #         dawa_price=price_dawa,
-        #         nahdi_price=price_nahdi,
-        #         amazon_price=price_amazon,
-        #         amazon_shipping=ship_amazon, 
-        #         amazon_sold_by=sold_amazon     
-        #     )
-        #     records_created += 1
+            # Extract the first element as we only expect a single value for each
+            price_dawa = price_dawa[0] if price_dawa else None
+            price_nahdi = price_nahdi[0] if price_nahdi else None
+            price_amazon = amazon_prices[0] if amazon_prices else None
+            ship_amazon = amazon_shipping[0] if amazon_shipping else None
+            sold_amazon = amazon_sold[0] if amazon_sold else None
 
-        # Debug logging
-    #     logger.info(f"Prices Dawa: {price_dawa}")
-    #     logger.info(f"Prices Nahdi: {price_nahdi}")
-    #     logger.info(f"Prices Amazon: {price_amazon}")
-    #     logger.info(f"Amazon Shipping: {amazon_shipping}")
-    #     logger.info(f"Amazon Sold By: {amazon_sold}")
+            # Create a record for the current product
+            records_to_create.append(ScrapedData(
+                product=product,
+                dawa_price=price_dawa,
+                nahdi_price=price_nahdi,
+                amazon_price=price_amazon,
+                amazon_shipping=ship_amazon,
+                amazon_sold_by=sold_amazon
+            ))
+            records_created += 1
 
-    #     # Return a summary of the task
-    #     return {
-    #         'status': 'success',
-    #         'total_products': len(products),
-    #         'records_created': records_created
-    #     }
+        # Bulk create ScrapedData entries for efficiency
+        ScrapedData.objects.bulk_create(records_to_create)
+        
+        # Return a summary of the task
+        return {
+            'status': 'success',
+            'total_products': len(products),
+            'records_created': records_created
+        }
     
-    # except Exception as e:
-    #     # Return error details if an exception occurs
-    #     return {
-    #         'status': 'failed',
-    #         'error': str(e)
-    #     }
+    except Exception as e:
+        # Log the error and return error details if an exception occurs
+        logger.error(f"Error in scrape_user_products_task: {str(e)}")
+        return {
+            'status': 'failed',
+            'error': str(e)
+        }
+
 
 # # @shared_task
 # def scrape_prices_task(sample_size=3):

@@ -4,6 +4,7 @@ static/
 staticfiles/
 venv/
 SourceData/
+XDocs/
 Xrequests_scripts/
 __pycache__
 .env

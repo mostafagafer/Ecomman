@@ -1,75 +1,42 @@
 from django.shortcuts import render, redirect
 from scrapper.models import ScrapedData
-from client_profile.models import Profile, PinnedTable #,Product, Subcategory, Brand, PromoPlan
+from client_profile.models import Profile, PinnedTable, Brand ,Product, Subcategory, PromoPlan
 # from django.db.models import OuterRef, Subquery, Max, F, Value as V, FloatField
 from django.db.models import OuterRef, Max, Subquery
 from django.contrib.auth.decorators import login_required
 # from django.db.models.functions import Coalesce
 from .dash_apps.app import plot_dashboard
 import pandas as pd
-
+from scrapper.tasks import scrape_user_products_task  # Import your task
 
 @login_required
-def performance_view2(request):
-    try:
-        profile = Profile.objects.get(user=request.user)
+def scrape_user_products_view(request):
+    # Get the current user's profile
+    profile = Profile.objects.get(user=request.user)
+    print("Profile:", profile)
+    
+    # Get only the products associated with the user's profile
+    user_products = Product.objects.filter(profile=profile)
+    print("user_products:", user_products)
 
-        # Fetch all scraped data for the products associated with the logged-in user's profile
-        scraped_data = ScrapedData.objects.filter(
-            product__profile=profile
-        )
+    # Extract product IDs to pass to the Celery task
+    product_ids = list(user_products.values_list('id', flat=True))
+    print("product_ids:", user_products)
 
-        # Get user accounts
-        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
-
-        # Define all possible dynamic columns
-        all_columns = [
-            {'name': 'dawa_price', 'header': 'Dawa Price'},
-            {'name': 'nahdi_price', 'header': 'Nahdi Price'},
-            {'name': 'amazon_price', 'header': 'Amazon.SA Price'},
-            {'name': 'dawa_compliance_flag', 'header': 'Dawa Compliance'},
-            {'name': 'nahdi_compliance_flag', 'header': 'Nahdi Compliance'},
-            {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
-        ]
-
-        columns = [
-            col for col in all_columns
-            if col['name'] in [
-                f"{account.lower()}_price" for account in user_accounts if account
-            ] or col['name'] in [
-                f"{account.lower()}_compliance_flag" for account in user_accounts if account
-            ]
-        ]
-
-        # Check if "amazon" is in the user's accounts
-        show_amazon_sold_by = 'amazon' in user_accounts
-
-        # Check if the current table is pinned by the user
-        is_table_pinned = profile.pinned_tables.filter(table_name="PerformanceData").exists()        
-        # Prepare the context with additional fields like OPPS, PCS, and product title
-        context = {
-            'scraped_data': scraped_data,
-            'columns': columns,
-            'show_amazon_sold_by': show_amazon_sold_by,  # Pass the boolean to the template
-            'is_table_pinned': is_table_pinned,
-            'segment': 'scraped_data',
-        }
-        print(scraped_data.count())
-
-        return render(request, 'dashboard/product_performance2.html', context)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return render(request, 'dashboard/product_performance2.html', {
-            'error_message': 'An error occurred while retrieving the data.'
-        })
-
+    # Trigger the Celery task, passing the product IDs
+    scrape_user_products_task.delay(product_ids)
+    
+    # Redirect to a page or render a template
+    return render(request, 'dashboard/price.html') # Assuming 'price.html' is the path to your template
 
 
 @login_required
 def dashboard_view(request):
     profile = Profile.objects.get(user=request.user)
     scraped_data = ScrapedData.objects.filter(product__profile=profile)
+    # for item in scraped_data:
+    #     print('here we go')
+    #     print("Product:", item.product.TITLE, "Amazon Price:", item.amazon_price, "Nahdi Price:", item.nahdi_price, "Dawa Price:", item.dawa_price)
 
     # Prepare data in a format for Dash
     data = {
@@ -81,8 +48,13 @@ def dashboard_view(request):
         'amazon_price': [item.amazon_price for item in scraped_data],
         'nahdi_price': [item.nahdi_price for item in scraped_data],
         'dawa_price': [item.dawa_price for item in scraped_data],
-
+        # 'amazon_price': [item.amazon_price if item.amazon_price is not None else None for item in scraped_data],
+        # 'nahdi_price': [item.nahdi_price if item.nahdi_price is not None else None for item in scraped_data],
+        # 'dawa_price': [item.dawa_price if item.dawa_price is not None else None for item in scraped_data],
     }
+
+    # Print the data dictionary for debugging
+    # print("Data dictionary:", data)
 
     # Initialize the Dash app
     plot_dashboard(data)
@@ -140,7 +112,7 @@ def performance_view(request):
         return render(request, 'dashboard/product_performance.html', context)
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred in performance_view: {e}")
         return render(request, 'dashboard/product_performance.html', {
             'error_message': 'An error occurred while retrieving the data.'
         })
@@ -179,15 +151,6 @@ def price(request):
             {'name': 'amazon_compliance_flag', 'header': 'Amazon Compliance'},
         ]
 
-        # # Filter columns to include only those related to user accounts (both price and compliance)
-        # columns = [
-        #     col for col in all_columns
-        #     if col['name'] in [
-        #         f"{account.lower()}_price" for account in user_accounts
-        #     ] or col['name'] in [
-        #         f"{account.lower()}_compliance_flag" for account in user_accounts
-        #     ]
-        # ]
 
         columns = [
             col for col in all_columns
@@ -197,6 +160,7 @@ def price(request):
                 f"{account.lower()}_compliance_flag" for account in user_accounts if account
             ]
         ]
+        # print(columns)
 
 
         # Check if "amazon" is in the user's accounts
@@ -209,22 +173,26 @@ def price(request):
         latest_scraped_date = max_scraped_data.aggregate(latest_date=Max('scraped_at'))['latest_date']
 
 
-        # plot
-        scraped_data = ScrapedData.objects.filter(product__profile=profile)
-        # Prepare data in a format for Dash
-        data = {
-            'scraped_at': [item.scraped_at.isoformat() for item in scraped_data],
-            'opps': [item.opps for item in scraped_data],
-            'Category': [item.product.category for item in scraped_data],
-            'Subcategory': [item.product.subcategory for item in scraped_data],
-            'Product': [item.product.TITLE for item in scraped_data],
-        }
+        # # plot
+        # scraped_data = ScrapedData.objects.filter(product__profile=profile)
+        # # Prepare data in a format for Dash
+        # data = {
+        #     'scraped_at': [item.scraped_at.isoformat() for item in scraped_data],
+        #     'opps': [item.opps for item in scraped_data],
+        #     'Category': [item.product.category for item in scraped_data],
+        #     'Subcategory': [item.product.subcategory for item in scraped_data],
+        #     'Product': [item.product.TITLE for item in scraped_data],
+        #     'amazon_price': [item.amazon_price for item in scraped_data],
+        #     'nahdi_price': [item.nahdi_price for item in scraped_data],
+        #     'dawa_price': [item.dawa_price for item in scraped_data],
 
-        # Initialize the Dash app
-        plot_dashboard(data)
+        # }
+
+        # # Initialize the Dash app
+        # plot_dashboard(data)
 
         context = {
-            'scraped_data': scraped_data,
+            # 'scraped_data': scraped_data,
             'max_scraped_data': max_scraped_data,  # Now returning instances
             'latest_scraped_date': latest_scraped_date,
             'is_table_pinned': is_table_pinned,
@@ -239,7 +207,7 @@ def price(request):
 
     except Exception as e:
         # Log the exception or handle it as needed
-        print(f"An error occurred: {e}")
+        print(f"An error occurred in price: {e}")
         return render(request, 'dashboard/price.html', {
             'error_message': 'An error occurred while retrieving the data.'
         })
@@ -257,7 +225,7 @@ def toggle_pin_table(request, table_name):
 
     return redirect(request.META.get('HTTP_REFERER', 'dashboard:price'))
 
-
+@login_required
 def index(request):
   try:
       profile = Profile.objects.get(user=request.user)  # Assuming you have a user profile
@@ -384,7 +352,7 @@ def index(request):
 
   except Exception as e:
       # Log the exception or handle it as needed
-      print(f"An error occurred: {e}")
+      print(f"An error occurred in index: {e}")
       return render(request, 'dashboard/index.html', {
           'error_message': 'An error occurred while retrieving the data.'
       })

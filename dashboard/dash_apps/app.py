@@ -126,9 +126,23 @@ from django_plotly_dash import DjangoDash
 
 def plot_dashboard(data):
     df = pd.DataFrame(data)
+    # Check the DataFrame columns after creation
+    # print("DataFrame columns in plot_dashboard:", df.columns)
+    # print("Sample data:\n", df.head())
+
     df['Category'] = df['Category'].astype(str)
     df['Subcategory'] = df['Subcategory'].astype(str)
     df['Product'] = df['Product'].astype(str)
+    df['Brand'] = df['Brand'].astype(str)
+    df['scraped_at'] = pd.to_datetime(df['scraped_at'])
+    # Generate monthly marks
+    date_marks = {
+        int(df['scraped_at'].min().timestamp()): df['scraped_at'].min().strftime('%Y-%m-%d'),
+        int(df['scraped_at'].max().timestamp()): df['scraped_at'].max().strftime('%Y-%m-%d')
+    }
+
+
+
 
     app = DjangoDash('OPPS_Line', external_stylesheets=['https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'])
 
@@ -179,50 +193,120 @@ def plot_dashboard(data):
     #     className='container-fluid',
     # )
 
+    # app.layout = html.Div(
+    #     [ html.Div( [ 
+    # html.Div( [  
+    #     html.Div( [  
+    #         html.Div( [ 
+    #                     html.H5("Category",
+    #                         className='pt-4',),
+    #                     dcc.Dropdown(
+    #                         id="category",
+    #                         options=[{"label": i, "value": i} for i in sorted(df["Category"].unique())],
+    #                         value=None,
+    #                     ),
+    #                     html.H5("Subcategory",
+    #                         className='pt-4'),
+    #                     dcc.Dropdown(
+    #                         id="subcategory",
+    #                         options=[{"label": i, "value": i} for i in sorted(df["Subcategory"].unique())],
+    #                         value=None),
+    #                     html.H5("Product",
+    #                         className='pt-4'),
+    #                     dcc.Dropdown(
+    #                         id="product",
+    #                         options=[],
+    #                         value=None,
+    #                         multi=True),
+    #         ],className='card-body p-3' ),
+    #     ],className='card z-index-2' ),
+    # ],className='container-fluid')
+    # ,
+    # html.Div( [ 
+    #     html.Div( [  
+    #             html.Div( [ 
+    #                 html.Div( [  
+    #                     html.H4("Online Precie Performance Score Over Time (Grouped by 6-hour Intervals)"),
+    #                 ],className='card-header pb-0' ),
+    #                 html.Div( [  
+    #                     dcc.Graph(id="line"),
+    #                 ],className='card-body p-3' ),
+    #         ],className='card-body p-3' ),
+    #     ],className='card z-index-2' ),
+    # ],className='container-fluid'),
+    # ],className='row mt-4')
+    # ],className='container-fluid')
     app.layout = html.Div(
-        [ html.Div( [ 
-    html.Div( [  
-        html.Div( [  
-            html.Div( [ 
-                        html.H5("Category",
-                            className='pt-4',),
+        [
+            html.Div([ 
+                html.Div([  
+                    html.Div([  
+                        html.H5("Category", className='pt-4'),
                         dcc.Dropdown(
                             id="category",
                             options=[{"label": i, "value": i} for i in sorted(df["Category"].unique())],
                             value=None,
                         ),
-                        html.H5("Subcategory",
-                            className='pt-4'),
+                        html.H5("Subcategory", className='pt-4'),
                         dcc.Dropdown(
                             id="subcategory",
                             options=[{"label": i, "value": i} for i in sorted(df["Subcategory"].unique())],
                             value=None),
-                        html.H5("Product",
-                            className='pt-4'),
+                        html.H5("Product", className='pt-4'),
                         dcc.Dropdown(
                             id="product",
                             options=[],
                             value=None,
                             multi=True),
-            ],className='card-body p-3' ),
-        ],className='card z-index-2' ),
-    ],className='col-lg-4')
-    ,
-    html.Div( [ 
-        html.Div( [  
-                html.Div( [ 
-                    html.Div( [  
-                        html.H4("Online Precie Performance Score Over Time (Grouped by 6-hour Intervals)"),
-                    ],className='card-header pb-0' ),
-                    html.Div( [  
-                        dcc.Graph(id="line"),
-                    ],className='card-body p-3' ),
-            ],className='card-body p-3' ),
-        ],className='card z-index-2' ),
-    ],className='col-lg-8'),
-    ],className='row mt-4')
-    ],className='container-fluid')
+                        
+                        # Insert the RangeSlider for scraped_at filtering
+                        html.H5("Date Range", className='pt-4'),
+                        # Add the RangeSlider
+                        dcc.RangeSlider(
+                            id='date-range-slider',
+                            min=int(df['scraped_at'].min().timestamp()),  # Convert min date to timestamp (in seconds)
+                            max=int(df['scraped_at'].max().timestamp()),  # Convert max date to timestamp (in seconds)
+                            value=[int(df['scraped_at'].min().timestamp()), int(df['scraped_at'].max().timestamp())],
+                            # marks=date_marks,  # Only show min and max dates as labels
+                            tooltip={
+                                "placement": "bottom",
+                                "always_visible": True,
+                                "style": {"color": "LightSteelBlue", "fontSize": "20px"}
+                            },
+                            vertical=False  # Make the slider vertical
+                        ),
+
+                    ], className='card-body p-3'),
+                ], className='card z-index-2'),
+            ], className='container-fluid'),
+
+            html.Div([
+                html.Div([  
+                    html.Div([ 
+                        html.H4("Online Price Performance Score Over Time (Grouped by 6-hour Intervals)", className='card-header pb-0'),
+                        html.Div([  
+                            dcc.Graph(id="line"),
+                        ], className='card-body p-3'),
+                    ], className='card-body p-3'),
+                ], className='card z-index-2'),
+            ], className='container-fluid'),
+
+        ], className='container-fluid'
+    )
    
+    # Chained Callback: Update Category dropdown based on Product and Subcategory
+    @app.callback(
+        Output("category", "options"),
+        Input("product", "value"),
+        Input("subcategory", "value")
+    )
+    def update_category_options(product, subcategory):
+        dff = copy.deepcopy(df)
+        if subcategory:
+            dff = dff[dff["Subcategory"] == subcategory]
+        if product:
+            dff = dff[dff["Product"].isin(product)]
+        return [{"label": i, "value": i} for i in sorted(dff["Category"].unique())]
 
 
     # Chained Callback: Update Subcategory dropdown based on Category and Product
@@ -253,19 +337,6 @@ def plot_dashboard(data):
             dff = dff[dff["Subcategory"] == subcategory]
         return [{"label": i, "value": i} for i in sorted(dff["Product"].unique())]
 
-    # Chained Callback: Update Category dropdown based on Product and Subcategory
-    @app.callback(
-        Output("category", "options"),
-        Input("product", "value"),
-        Input("subcategory", "value")
-    )
-    def update_category_options(product, subcategory):
-        dff = copy.deepcopy(df)
-        if subcategory:
-            dff = dff[dff["Subcategory"] == subcategory]
-        if product:
-            dff = dff[dff["Product"].isin(product)]
-        return [{"label": i, "value": i} for i in sorted(dff["Category"].unique())]
 
     # Line Chart Callback: Update chart based on selected Product, Subcategory, and Category
     @app.callback(
@@ -290,50 +361,95 @@ def plot_dashboard(data):
         # Create a 'quarter_day' column by rounding 'scraped_at' to the nearest 6 hours
         dff['quarter_day'] = dff['scraped_at'].dt.floor('6h')
 
-        # Filter for multiple products
+        # Filter by product first
         if product:
             dff = dff[dff["Product"].isin(product)]
+            # Print columns to debug
+            # print("Columns after filtering by product:", dff.columns)
 
+        # Define the price columns
+        price_columns = ['amazon_price', 'nahdi_price', 'dawa_price']
+
+        # Intersect price columns with actual columns in dff to avoid KeyError
+        existing_price_columns = [col for col in price_columns if col in dff.columns]
+        # print("Existing price columns:", existing_price_columns)
+
+
+        # Replace 'None' and 'N/A' with NaN in existing price columns only
+        dff.loc[:, existing_price_columns] = dff.loc[:, existing_price_columns].replace([None, 'N/A'], pd.NA)
+        dff.loc[:, existing_price_columns] = dff.loc[:, existing_price_columns].apply(pd.to_numeric, errors='coerce')
 
         # Ensure only numeric columns are used in mean calculation
         numeric_cols = dff.select_dtypes(include='number').columns
+        # print("numeric cols are ", numeric_cols)
 
         # Group by 'quarter_day' and calculate the mean of numeric columns
         grouped_df = dff.groupby('quarter_day')[numeric_cols].mean().reset_index()
 
-        # Plot the data using plotly.graph_objs
+        # Initialize the figure
         fig = go.Figure()
 
-        # Plot for each selected product
+        # Loop over each product and plot their respective prices if available
         if product:
             for prod in product:
                 product_data = dff[dff["Product"] == prod]
                 grouped_product_df = product_data.groupby('quarter_day')[numeric_cols].mean().reset_index()
 
+                # Check and add traces for existing price columns only
+                for col in existing_price_columns:
+                    if col in grouped_product_df.columns:
+                        fig.add_trace(go.Scatter(
+                            x=grouped_product_df['quarter_day'],
+                            y=grouped_product_df[col],
+                            mode='lines',
+                            name=f'{col.replace("_price", "").capitalize()} Price for {prod}'
+                        ))
+
+        # Plot the average prices for all selected products, only for existing columns
+        for col in existing_price_columns:
+            if col in grouped_df.columns:
                 fig.add_trace(go.Scatter(
-                    x=grouped_product_df['quarter_day'],
-                    y=grouped_product_df['opps'],  # Assuming 'opps' is a numeric field
+                    x=grouped_df['quarter_day'],
+                    y=grouped_df[col],
                     mode='lines',
-                    name=f'OPPS for {prod}'
+                    name=f'Average {col.replace("_price", "").capitalize()} Price',
+                    line=dict(dash='dash')
                 ))
 
-        # Plot the average OPPS for all selected products
-        fig.add_trace(go.Scatter(
-            x=grouped_df['quarter_day'],
-            y=grouped_df['opps'],
-            mode='lines',
-            name='Average OPPS',
-            line=dict(dash='dash')
-        ))
-
-        # Update the layout of the figure
-        fig.update_layout(
-            xaxis_title="Scraped Date (Quarter Day)",
-            yaxis_title="OPPS",
-            template="plotly_white"
-        )
-
         return fig
+
+        # Plot for each selected product
+        # if product:
+        #     for prod in product:
+        #         product_data = dff[dff["Product"] == prod]
+        #         grouped_product_df = product_data.groupby('quarter_day')[numeric_cols].mean().reset_index()
+
+        #         fig.add_trace(go.Scatter(
+        #             x=grouped_product_df['quarter_day'],
+        #             y=grouped_product_df['opps'],  # Assuming 'opps' is a numeric field
+        #             mode='lines',
+        #             name=f'OPPS for {prod}'
+        #         ))
+
+        # # Plot the average OPPS for all selected products
+        # fig.add_trace(go.Scatter(
+        #     x=grouped_df['quarter_day'],
+        #     y=grouped_df['opps'],
+        #     mode='lines',
+        #     name='Average OPPS',
+        #     line=dict(dash='dash')
+        # ))
+
+        # # Update the layout of the figure
+        # fig.update_layout(
+        #     xaxis_title="Scraped Date (Quarter Day)",
+        #     yaxis_title="OPPS",
+        #     template="plotly_white"
+        # )
+
+        # return fig
+
+
 
     return app
 

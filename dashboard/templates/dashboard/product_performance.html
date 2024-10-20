@@ -46,10 +46,10 @@
         <th>Amazon Sold By</th>
         {% endif %}
 
-        <th>Amazon Ratio</th>
-        <th>Dawa Ratio</th>
-        <th>Nahdi Ratio</th>
-
+        <th>Amazon Comp</th>
+        <th>Dawa Comp</th>
+        <th>Nahdi Comp</th>
+        <th>ADS</th>
         <th>PCS</th>
         <th>PDS</th>
         <th>OPPS</th>
@@ -99,9 +99,10 @@
           </td>
           {% endif %}
 
-          <td>{{ row.amazon_ratio|floatformat:2|default:"N/A" }}</td>
-          <td>{{ row.dawa_ratio|floatformat:2|default:"N/A" }}</td>
-          <td>{{ row.nahdi_ratio|floatformat:2|default:"N/A" }}</td>
+          <td>{{ row.amazon_compliance_score|floatformat:2|default:"N/A" }}</td>
+          <td>{{ row.dawa_compliance_score|floatformat:2|default:"N/A" }}</td>
+          <td>{{ row.nahdi_compliance_score|floatformat:2|default:"N/A" }}</td>
+          <td>{{ row.account_deviation_score|floatformat:2 }}%</td>
 
       
           <td>{{ row.pcs|floatformat:2 }}%</td>
