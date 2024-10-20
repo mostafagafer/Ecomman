@@ -105,12 +105,17 @@ def scrape_user_products_task(product_ids):
             nahdi_id = [link.identifier for link in product.account_id_links.filter(account_id__name='nahdi')]
             amazon_id = [link.identifier for link in product.account_id_links.filter(account_id__name='amazon')]
 
-            # Fetch prices for each identifier
+            # Fetch prices for each identifier with delay
             price_dawa = loop.run_until_complete(get_dawa_prices(dawa_id)) if dawa_id else [None]
+            time.sleep(2)  # Add a delay of 2 seconds between requests
+            print('weight 2 sec')  # Add a delay of 2 seconds between requests
             price_nahdi = loop.run_until_complete(get_nahdi_prices(nahdi_id)) if nahdi_id else [None]
+            time.sleep(2)  # Add a delay of 2 seconds between requests
+            print('weight 2 sec')            
             amazon_prices, amazon_shipping, amazon_sold = (loop.run_until_complete(get_amazon_product_details(amazon_id))
                                                            if amazon_id else ([None], [None], [None]))
-
+            time.sleep(2)  # Add a delay of 2 seconds between requests
+            print('weight 2 sec')
             # Extract the first element as we only expect a single value for each
             price_dawa = price_dawa[0] if price_dawa else None
             price_nahdi = price_nahdi[0] if price_nahdi else None
