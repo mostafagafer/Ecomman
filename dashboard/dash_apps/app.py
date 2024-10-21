@@ -416,6 +416,19 @@ def plot_dashboard(data):
                     line=dict(dash='dash')
                 ))
 
+        # Update the layout of the figure
+        fig.update_layout(
+            xaxis_title="Scraped Date (Quarter Day)",
+            yaxis_title="Price",
+            template="plotly_white",
+            legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                )
+        )
         return fig
 
         # Plot for each selected product

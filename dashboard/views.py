@@ -42,6 +42,7 @@ def dashboard_view(request):
     data = {
         'scraped_at': [item.scraped_at.isoformat() for item in scraped_data],
         'opps': [item.opps for item in scraped_data],
+        'Brand': [item.product.brand for item in scraped_data],
         'Category': [item.product.category for item in scraped_data],
         'Subcategory': [item.product.subcategory for item in scraped_data],
         'Product': [item.product.TITLE for item in scraped_data],
