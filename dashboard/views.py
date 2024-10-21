@@ -17,11 +17,11 @@ def scrape_user_products_view(request):
     
     # Get only the products associated with the user's profile
     user_products = Product.objects.filter(profile=profile)
-    print("user_products:", user_products)
+    # print("user_products:", user_products)
 
     # Extract product IDs to pass to the Celery task
     product_ids = list(user_products.values_list('id', flat=True))
-    print("product_ids:", user_products)
+    # print("product_ids:", user_products)
 
     # Trigger the Celery task, passing the product IDs
     scrape_user_products_task.delay(product_ids)

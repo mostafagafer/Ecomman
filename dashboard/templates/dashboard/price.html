@@ -72,19 +72,7 @@ input:checked + .slider:before {
 
 
 
-<div class="container-fluid py-4">
-  <div class="row mt-4">
-    <div class>
 
-      <form action="{% url 'dashboard:trigger_scrape_for_user_products' %}" method="post">
-        {% csrf_token %}
-        <button class="btn btn-lg btn-primary" type="submit">Update Price Now</button>
-      </form>
-
-    </div>
-  </div>
-  
-</div>
 
 
 <div class="container-fluid py-4">
@@ -112,7 +100,21 @@ input:checked + .slider:before {
             </div>
 
           </div>
-        </div>
+
+          <div class="row mt-4">
+            <div class="container-fluid">
+        
+              <form action="{% url 'dashboard:trigger_scrape_for_user_products' %}" method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2">
+
+                <button class="btn btn-primary" type="submit">Update Price Now</button>
+                </div>
+
+              </form>
+        
+            </div>
+          </div>
         <div class="card-body px-0 pb-2">
           <div class="table-responsive">
             
