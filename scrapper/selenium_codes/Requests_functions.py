@@ -65,15 +65,107 @@ async def fetch_amazon_product(session, product_id):
                 logging.warning(f"Sold by info not found for {product_id}, trying alternative approach.")
                 sold_by_info = soup.find(id='sellerProfileTriggerId')  # Alternative class/id for sold by
 
+            # Try to find the product title
+            title = None
+            title_element = soup.find(id='productTitle')
+            if title_element:
+                title = title_element.get_text(strip=True)
+            
+            # Try to find availability info
+            availability_info = None
+            availability_element = soup.find(id='availability')
+
+            if availability_element:
+                # Check for the common "in stock" class first
+                availability_span = availability_element.find('span', class_='a-size-medium a-color-success')
+                if availability_span:
+                    availability_info = availability_span.get_text(strip=True)
+                else:
+                    # Check for the "only X left in stock" class
+                    availability_span_alt = availability_element.find('span', class_='a-size-base a-color-price a-text-bold')
+                    if availability_span_alt:
+                        availability_info = availability_span_alt.get_text(strip=True)
+                    else:
+                        logging.warning(f"Availability info not found for {product_id}.")
+            else:
+                logging.warning(f"Availability element not found for {product_id}.")
+
+            # Try to find the discount percentage
+            discount_percentage = None
+            # Look for the span with the discount percentage
+            discount_element = soup.find('span', class_='a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage')
+            if discount_element:
+                # Extract only the number (36 in this case)
+                discount_percentage = discount_element.get_text(strip=True).replace('%', '').replace('-', '').strip()
+            else:
+                logging.warning(f"Discount percentage not found for {product_id}.")
+
+            # Try to find the sold count
+            sold_count = None
+            # Look for the span with the sold count
+            sold_count_element = soup.find('span', id='social-proofing-faceout-title-tk_bought')
+            if sold_count_element:
+                # Extract the text (e.g., "300+ bought in past month")
+                sold_count = sold_count_element.get_text(strip=True)
+            else:
+                logging.warning(f"Sold count not found for {product_id}.")
+
+            # Try to find the Amazon's Choice badge
+            amazons_choice = False
+            # Look for the badge wrapper that contains "Amazon's Choice"
+            choice_badge_element = soup.find('span', class_='ac-badge-text-primary')
+            if choice_badge_element and "Amazon's" in choice_badge_element.get_text(strip=True):
+                amazons_choice = True
+            else:
+                logging.info(f"Amazon's Choice badge not found for {product_id}.")
+
+
+
             # Log details for debugging
-            logging.info(f"Product ID: {product_id}, Price: {price}, Shipping: {shipping_info}, Sold By: {sold_by_info}")
-            return price, shipping_info, sold_by_info
+            logging.info(f"Product ID: {product_id}, Title: {title}, Price: {price}, Shipping: {shipping_info}, Sold By: {sold_by_info}")
+            return title, price, shipping_info, sold_by_info, availability_info, discount_percentage, sold_count, amazons_choice
+
+
+    # try:
+    #     async with session.get(url, headers=headers) as response:
+    #         content = await response.text()
+    #         soup = BeautifulSoup(content, 'html.parser')
+
+    #         # Try to find the price
+    #         price = None
+    #         price_element = soup.find(class_='reinventPricePriceToPayMargin')
+    #         if not price_element:
+    #             logging.warning(f"Price not found for {product_id}, trying alternative class.")
+    #             price_element = soup.find(id='priceblock_ourprice')  # Alternative class/id for price
+    #         if price_element:
+    #             price = price_element.get_text(strip=True).replace("\n", ".").replace("SAR", "").strip()
+
+    #         # Try to find shipping info
+    #         shipping_info = None
+    #         ship_element = soup.find(class_='offer-display-feature-text-message')
+    #         if not ship_element:
+    #             logging.warning(f"Shipping info not found for {product_id}, trying alternative class.")
+    #             ship_element = soup.find(id='merchant-info')  # Alternative class/id for shipping
+    #         if ship_element:
+    #             shipping_info = ship_element.get_text(strip=True)
+
+    #         # Try to find 'Sold By' info
+    #         sold_by_info = None
+    #         sold_by_elements = soup.find_all(class_='offer-display-feature-text-message')
+    #         if len(sold_by_elements) > 1:
+    #             sold_by_info = sold_by_elements[1].get_text(strip=True)
+    #         else:
+    #             logging.warning(f"Sold by info not found for {product_id}, trying alternative approach.")
+    #             sold_by_info = soup.find(id='sellerProfileTriggerId')  # Alternative class/id for sold by
+
+    #         # Log details for debugging
+    #         logging.info(f"Product ID: {product_id}, Price: {price}, Shipping: {shipping_info}, Sold By: {sold_by_info}")
+    #         return price, shipping_info, sold_by_info
 
     except Exception as e:
         logging.error(f"Error fetching data for {product_id}: {e}")
         return None, None, None
 
-# Asynchronous task to fetch and return data for multiple Amazon product IDs
 async def get_amazon_product_details(product_ids):
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_amazon_product(session, product_id) for product_id in product_ids]
@@ -81,10 +173,26 @@ async def get_amazon_product_details(product_ids):
         # Wait for all tasks to complete
         responses = await asyncio.gather(*tasks)
         
-        # Unzip the responses into separate lists, handling None cases if they arise
-        prices_amazon, amazon_shipping, amazon_sold = map(list, zip(*responses)) if responses else ([], [], [])
+        # Unzip the responses into separate lists for title, price, shipping, sold by, etc.
+        if responses:
+            titles, prices_amazon, amazon_shipping, amazon_sold, availability_infos, discount_percentages, sold_counts, amazons_choices = map(list, zip(*responses))
+        else:
+            titles, prices_amazon, amazon_shipping, amazon_sold, availability_infos, discount_percentages, sold_counts, amazons_choices = ([], [], [], [], [], [], [], [])
+
+        return titles, prices_amazon, amazon_shipping, amazon_sold, availability_infos, discount_percentages, sold_counts, amazons_choices
+
+# Asynchronous task to fetch and return data for multiple Amazon product IDs
+# async def get_amazon_product_details(product_ids):
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [fetch_amazon_product(session, product_id) for product_id in product_ids]
         
-        return prices_amazon, amazon_shipping, amazon_sold
+#         # Wait for all tasks to complete
+#         responses = await asyncio.gather(*tasks)
+        
+#         # Unzip the responses into separate lists, handling None cases if they arise
+#         prices_amazon, amazon_shipping, amazon_sold = map(list, zip(*responses)) if responses else ([], [], [])
+        
+#         return prices_amazon, amazon_shipping, amazon_sold
 
 async def fetch_nahdi_data(session, query):
     url = 'https://h9x4ih7m99-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.3)%3B%20Browser%3B%20instantsearch.js%20(4.63.0)%3B%20Magento2%20integration%20(3.13.3)%3B%20JS%20Helper%20(3.16.1)'
@@ -135,26 +243,72 @@ async def fetch_nahdi_data(session, query):
             response_data = {"results": []}
         return response_data
 
-# Process the Nahdi response to extract prices
+# Nahdi response processing function
 def process_nahdi_response(data):
-    prices = []
+    nahdi_data = []
     for result in data.get('results', []):
-        for hit in result.get('hits', []):
-            price = hit.get('price', {}).get('SAR', {}).get('default')
-            prices.append(price)
-    return prices
+        hits = result.get('hits', [])
+        if hits:  # Check if there are hits
+            hit = hits[0]  # Select the first hit
+            
+            # Extract the necessary fields with default values if not found
+            original_price = hit.get('price', {}).get('SAR', {}).get('default_original_formated', None)
+            # Remove " SAR" and commas, then convert to float if not None
+            if original_price:
+                original_price = float(original_price.replace(' SAR', '').replace(',', '').strip())
 
-# Asynchronous task to fetch and return data for multiple SKUs
+            nahdi_data.append({
+                'name': hit.get('store_en', {}).get('name', None),
+                'price': hit.get('price', {}).get('SAR', {}).get('default', None),
+                'original_price': original_price,
+                'ordered_qty': hit.get('ordered_qty', None),
+                'sold_out': hit.get('sold_out', None),
+                'in_stock': hit.get('in_stock', None),
+                'limited_stock': hit.get('limited_stock', None)
+            })
+    return nahdi_data
+
+
+# Asynchronous task to fetch and return Nahdi data for multiple SKUs
 async def get_nahdi_prices(nahdi_queries):
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_nahdi_data(session, query) for query in nahdi_queries]
-        
-        # Wait for all tasks to complete
         responses = await asyncio.gather(*tasks)
+        all_nahdi_data = [process_nahdi_response(response) for response in responses]
 
-        # Process responses to extract prices
-        all_prices = [process_nahdi_response(response) for response in responses]
-        return [price[0] if price else None for price in all_prices]
+        return [
+            {
+                'name': data[0]['name'] if data else None,
+                'price': data[0]['price'] if data else None,
+                'availability_info': data[0]['in_stock'] if data else None,
+                'price_original': data[0]['original_price'] if data else None,
+                'ordered_qty': data[0]['ordered_qty'] if data else None,
+                'sold_out': data[0]['sold_out'] if data else None,
+                'limited_stock': data[0]['limited_stock'] if data else None
+            }
+            for data in all_nahdi_data
+        ]
+
+# Process the Nahdi response to extract prices
+# def process_nahdi_response(data):
+#     prices = []
+#     for result in data.get('results', []):
+#         for hit in result.get('hits', []):
+#             price = hit.get('price', {}).get('SAR', {}).get('default')
+#             prices.append(price)
+#     return prices
+
+# # Asynchronous task to fetch and return data for multiple SKUs
+# async def get_nahdi_prices(nahdi_queries):
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [fetch_nahdi_data(session, query) for query in nahdi_queries]
+        
+#         # Wait for all tasks to complete
+#         responses = await asyncio.gather(*tasks)
+
+#         # Process responses to extract prices
+#         all_prices = [process_nahdi_response(response) for response in responses]
+#         return [price[0] if price else None for price in all_prices]
 
 # Fetch Dawa Data Asynchronously
 async def fetch_dawa_data(session, query):
@@ -199,23 +353,68 @@ async def fetch_dawa_data(session, query):
             response_data = {"results": []}
         return response_data
 
-# Process the Dawa response to extract prices
+# Dawa response processing function
 def process_dawa_response(data):
-    prices = []
+    dawa_data = []
     for result in data.get('results', []):
-        for hit in result.get('hits', []):
-            price = hit.get('price', {}).get('SAR', {}).get('default')
-            prices.append(price)
-    return prices
+        hits = result.get('hits', [])
+        if hits:  # Check if there are hits
+            hit = hits[0]  # Select the first hit
+            # Extract necessary data with default values if not found
+            original_price = hit.get('price', {}).get('SAR', {}).get('default_original_formated', None)
+            # Remove " SAR" and commas, then convert to float
+            if original_price:
+                original_price = float(original_price.replace(' SAR', '').replace(',', '').strip())
 
-# Asynchronous task to fetch and return data for multiple queries
+            dawa_data.append({
+                'name': hit.get('name', None),
+                'price': hit.get('price', {}).get('SAR', {}).get('default', None),
+                'price_original': original_price,
+                'in_stock': hit.get('in_stock', None),
+                'is_in_stock_msi': hit.get('is_in_stock_msi', None),
+                'offer_text_notag': hit.get('offer_text_notag', None),
+            })
+    return dawa_data
+
+
+
+# Asynchronous task to fetch and return Dawa data for multiple queries
 async def get_dawa_prices(dawa_queries):
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_dawa_data(session, query) for query in dawa_queries]
-        
-        # Wait for all tasks to complete
         responses = await asyncio.gather(*tasks)
+        all_dawa_data = [process_dawa_response(response) for response in responses]
 
-        # Process responses to extract prices
-        all_prices = [process_dawa_response(response) for response in responses]
-        return [price[0] if price else None for price in all_prices]  # Select the first price if multiple
+        return [
+            {
+                'name': data[0]['name'] if data else None,
+                'price': data[0]['price'] if data else None,
+                'availability_info': data[0]['in_stock'] if data else None,
+                'price_original': data[0]['price_original'] if data else None,
+                'is_in_stock_msi': data[0]['is_in_stock_msi'] if data else None,
+                'offer_text_notag': data[0]['offer_text_notag'] if data else None
+            }
+            for data in all_dawa_data
+        ]
+
+
+# Process the Dawa response to extract prices
+# def process_dawa_response(data):
+#     prices = []
+#     for result in data.get('results', []):
+#         for hit in result.get('hits', []):
+#             price = hit.get('price', {}).get('SAR', {}).get('default')
+#             prices.append(price)
+#     return prices
+
+# # Asynchronous task to fetch and return data for multiple queries
+# async def get_dawa_prices(dawa_queries):
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [fetch_dawa_data(session, query) for query in dawa_queries]
+        
+#         # Wait for all tasks to complete
+#         responses = await asyncio.gather(*tasks)
+
+#         # Process responses to extract prices
+#         all_prices = [process_dawa_response(response) for response in responses]
+#         return [price[0] if price else None for price in all_prices]  # Select the first price if multiple

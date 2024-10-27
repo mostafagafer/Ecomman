@@ -127,9 +127,6 @@ from django_plotly_dash import DjangoDash
 def plot_dashboard(data):
     df = pd.DataFrame(data)
     # Check the DataFrame columns after creation
-    # print("DataFrame columns in plot_dashboard:", df.columns)
-    # print("Sample data:\n", df.head())
-
     df['Category'] = df['Category'].astype(str)
     df['Subcategory'] = df['Subcategory'].astype(str)
     df['Product'] = df['Product'].astype(str)
@@ -146,96 +143,6 @@ def plot_dashboard(data):
 
     app = DjangoDash('OPPS_Line', external_stylesheets=['https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'])
 
-    # app.layout = html.Div(
-    #     [
-    #         html.Div(
-    #             [
-    #                 html.Div(
-    #                     [
-    #                         html.H5("Category"),
-    #                         dcc.Dropdown(
-    #                             id="category",
-    #                             options=[{"label": i, "value": i} for i in sorted(df["Category"].unique())],
-    #                             value=None
-    #                         ),
-    #                         html.H5("Subcategory"),
-    #                         dcc.Dropdown(
-    #                             id="subcategory",
-    #                             options=[{"label": i, "value": i} for i in sorted(df["Subcategory"].unique())],
-    #                             value=None
-    #                         ),
-    #                         html.H5("Product"),
-    #                         dcc.Dropdown(
-    #                             id="product",
-    #                             options=[],
-    #                             value=None,
-    #                             multi=True
-
-    #                         ),
-    #                     ],
-    #                     className='col-md-4',
-    #                 style={'width': '33%', 'display': 'inline-block', 'verticalAlign': 'top'},
-    #                 ),
-    #                 html.Div(
-    #                     [
-    #                         dcc.Graph(id="line"),
-    #                     ],
-    #                     className='col-md-8',
-    #                                         style={'width': '66%', 'display': 'inline-block', 'verticalAlign': 'top'},
-
-    #                 ),
-    #             ],
-    #             className='row',
-    #                         style={'display': 'flex', 'flexWrap': 'wrap'},
-
-    #         ),
-    #     ],
-    #     className='container-fluid',
-    # )
-
-    # app.layout = html.Div(
-    #     [ html.Div( [ 
-    # html.Div( [  
-    #     html.Div( [  
-    #         html.Div( [ 
-    #                     html.H5("Category",
-    #                         className='pt-4',),
-    #                     dcc.Dropdown(
-    #                         id="category",
-    #                         options=[{"label": i, "value": i} for i in sorted(df["Category"].unique())],
-    #                         value=None,
-    #                     ),
-    #                     html.H5("Subcategory",
-    #                         className='pt-4'),
-    #                     dcc.Dropdown(
-    #                         id="subcategory",
-    #                         options=[{"label": i, "value": i} for i in sorted(df["Subcategory"].unique())],
-    #                         value=None),
-    #                     html.H5("Product",
-    #                         className='pt-4'),
-    #                     dcc.Dropdown(
-    #                         id="product",
-    #                         options=[],
-    #                         value=None,
-    #                         multi=True),
-    #         ],className='card-body p-3' ),
-    #     ],className='card z-index-2' ),
-    # ],className='container-fluid')
-    # ,
-    # html.Div( [ 
-    #     html.Div( [  
-    #             html.Div( [ 
-    #                 html.Div( [  
-    #                     html.H4("Online Precie Performance Score Over Time (Grouped by 6-hour Intervals)"),
-    #                 ],className='card-header pb-0' ),
-    #                 html.Div( [  
-    #                     dcc.Graph(id="line"),
-    #                 ],className='card-body p-3' ),
-    #         ],className='card-body p-3' ),
-    #     ],className='card z-index-2' ),
-    # ],className='container-fluid'),
-    # ],className='row mt-4')
-    # ],className='container-fluid')
     app.layout = html.Div(
         [
             html.Div([ 
@@ -277,7 +184,7 @@ def plot_dashboard(data):
                         ),
 
                     ], className='card-body p-3'),
-                ], className='card z-index-2'),
+                ], className='row mt-4'),
             ], className='container-fluid'),
 
             html.Div([
@@ -286,9 +193,9 @@ def plot_dashboard(data):
                         html.H4("Online Price Performance Score Over Time (Grouped by 6-hour Intervals)", className='card-header pb-0'),
                         html.Div([  
                             dcc.Graph(id="line"),
-                        ], className='card-body p-3'),
+                        ]),
                     ], className='card-body p-3'),
-                ], className='card z-index-2'),
+                ], className='row mt-4'),
             ], className='container-fluid'),
 
         ], className='container-fluid'
@@ -359,7 +266,7 @@ def plot_dashboard(data):
         dff['scraped_at'] = pd.to_datetime(dff['scraped_at'])
 
         # Create a 'quarter_day' column by rounding 'scraped_at' to the nearest 6 hours
-        dff['quarter_day'] = dff['scraped_at'].dt.floor('6h')
+        dff['quarter_day'] = dff['scraped_at'].dt.floor('4h')
 
         # Filter by product first
         if product:
@@ -406,15 +313,15 @@ def plot_dashboard(data):
                         ))
 
         # Plot the average prices for all selected products, only for existing columns
-        for col in existing_price_columns:
-            if col in grouped_df.columns:
-                fig.add_trace(go.Scatter(
-                    x=grouped_df['quarter_day'],
-                    y=grouped_df[col],
-                    mode='lines',
-                    name=f'Average {col.replace("_price", "").capitalize()} Price',
-                    line=dict(dash='dash')
-                ))
+        # for col in existing_price_columns:
+        #     if col in grouped_df.columns:
+        #         fig.add_trace(go.Scatter(
+        #             x=grouped_df['quarter_day'],
+        #             y=grouped_df[col],
+        #             mode='lines',
+        #             name=f'Average {col.replace("_price", "").capitalize()} Price',
+        #             line=dict(dash='dash')
+        #         ))
 
         # Update the layout of the figure
         fig.update_layout(

@@ -30,54 +30,125 @@ def scrape_prices_task(sample_size=50):
         records_created = 0
         
         loop = asyncio.get_event_loop()
-
         for product in products:
-            # Fetch identifiers for the current product
             dawa_id = [link.identifier for link in product.account_id_links.filter(account_id__name='dawa')]
             nahdi_id = [link.identifier for link in product.account_id_links.filter(account_id__name='nahdi')]
             amazon_id = [link.identifier for link in product.account_id_links.filter(account_id__name='amazon')]
-            
-            # Fetch prices for each identifier
-            # If no identifiers, use `None` to indicate no data
-            amazon_prices, amazon_shipping, amazon_sold = (loop.run_until_complete(get_amazon_product_details(amazon_id))
-                                                           if amazon_id else ([None], [None], [None]))
-            price_dawa = loop.run_until_complete(get_dawa_prices(dawa_id)) if dawa_id else [None]
-            price_nahdi = loop.run_until_complete(get_nahdi_prices(nahdi_id)) if nahdi_id else [None]
 
-            # Extract the first element as we only expect a single value for each
-            price_dawa = price_dawa[0] if price_dawa else None
-            price_nahdi = price_nahdi[0] if price_nahdi else None
+            try:
+                # Fetch data from Amazon
+                amazon_titles, amazon_prices, amazon_shipping, amazon_sold, amazon_availability, amazon_discount, amazon_sold_count, amazon_choice = (
+                    loop.run_until_complete(get_amazon_product_details(amazon_id)) if amazon_id else
+                    ([None], [None], [None], [None], [None], [None], [None], [None])
+                )
+                logger.info(f"Amazon data: {amazon_titles}, {amazon_prices}, {amazon_shipping}, {amazon_sold}, {amazon_availability}, {amazon_discount}, {amazon_sold_count}, {amazon_choice}")
+
+            except Exception as e:
+                logger.error(f"Error fetching Amazon details: {e}")
+                amazon_titles, amazon_prices, amazon_shipping, amazon_sold, amazon_availability, amazon_discount, amazon_sold_count, amazon_choice = [None] * 8
+
+            try:
+                # Fetch data from Dawa
+                dawa_data = loop.run_until_complete(get_dawa_prices(dawa_id)) if dawa_id else [{}]
+
+                if isinstance(dawa_data, list) and dawa_data:
+                    dawa_titles = [item.get('name') for item in dawa_data]
+                    dawa_prices = [item.get('price') for item in dawa_data]
+                    dawa_availability_info = [item.get('availability_info') for item in dawa_data]
+                    dawa_original_prices = [item.get('price_original') for item in dawa_data]
+                    dawa_is_in_stock_msi = [item.get('is_in_stock_msi') for item in dawa_data]
+                    dawa_offer_text = [item.get('offer_text_notag') for item in dawa_data]
+                else:
+                    dawa_titles, dawa_prices, dawa_availability_info, dawa_original_prices, dawa_is_in_stock_msi, dawa_offer_text = [None] * 6
+
+                logger.info(f"Dawa data: {dawa_titles}, {dawa_prices}, {dawa_availability_info}, {dawa_original_prices}, {dawa_is_in_stock_msi}, {dawa_offer_text}")
+
+            except Exception as e:
+                logger.error(f"Error fetching Dawa details: {e}")
+                dawa_titles, dawa_prices, dawa_availability_info, dawa_original_prices, dawa_is_in_stock_msi, dawa_offer_text = [None] * 6
+
+            try:
+                # Fetch data from Nahdi
+                nahdi_data = loop.run_until_complete(get_nahdi_prices(nahdi_id)) if nahdi_id else [{}]
+
+                if isinstance(nahdi_data, list) and nahdi_data:
+                    nahdi_titles = [item.get('name') for item in nahdi_data]
+                    nahdi_prices = [item.get('price') for item in nahdi_data]
+                    nahdi_availability_info = [item.get('availability_info') for item in nahdi_data]
+                    nahdi_original_prices = [item.get('price_original') for item in nahdi_data]
+                    nahdi_ordered_qty = [item.get('ordered_qty') for item in nahdi_data]
+                    nahdi_sold_out = [item.get('sold_out') for item in nahdi_data]
+                    nahdi_limited_stock = [item.get('limited_stock') for item in nahdi_data]
+                else:
+                    nahdi_titles, nahdi_prices, nahdi_availability_info, nahdi_original_prices, nahdi_ordered_qty, nahdi_sold_out, nahdi_limited_stock = [None] * 7
+
+                logger.info(f"Nahdi data: {nahdi_titles}, {nahdi_prices}, {nahdi_availability_info}, {nahdi_original_prices}, {nahdi_ordered_qty}, {nahdi_sold_out}, {nahdi_limited_stock}")
+
+            except Exception as e:
+                logger.error(f"Error fetching Nahdi details: {e}")
+                nahdi_titles, nahdi_prices, nahdi_availability_info, nahdi_original_prices, nahdi_ordered_qty, nahdi_sold_out, nahdi_limited_stock = [None] * 7
+
+            # Assign extracted values
+            price_dawa = dawa_prices[0] if dawa_prices else None
+            title_dawa = dawa_titles[0] if dawa_titles else None
+            availability_dawa = dawa_availability_info[0] if dawa_availability_info else None
+            original_price_dawa = dawa_original_prices[0] if dawa_original_prices else None
+            is_in_stock_dawa = dawa_is_in_stock_msi[0] if dawa_is_in_stock_msi else None
+            offer_text_dawa = dawa_offer_text[0] if dawa_offer_text else None
+
+            price_nahdi = nahdi_prices[0] if nahdi_prices else None
+            title_nahdi = nahdi_titles[0] if nahdi_titles else None
+            availability_nahdi = nahdi_availability_info[0] if nahdi_availability_info else None
+            original_price_nahdi = nahdi_original_prices[0] if nahdi_original_prices else None
+            ordered_qty_nahdi = nahdi_ordered_qty[0] if nahdi_ordered_qty else None
+            sold_out_nahdi = nahdi_sold_out[0] if nahdi_sold_out else None
+            limited_stock_nahdi = nahdi_limited_stock[0] if nahdi_limited_stock else None
+
             price_amazon = amazon_prices[0] if amazon_prices else None
             ship_amazon = amazon_shipping[0] if amazon_shipping else None
             sold_amazon = amazon_sold[0] if amazon_sold else None
+            title_amazon = amazon_titles[0] if amazon_titles else None
+            availability_amazon = amazon_availability[0] if amazon_availability else None
+            discount_amazon = amazon_discount[0] if amazon_discount else None
+            sold_count_amazon = amazon_sold_count[0] if amazon_sold_count else None
+            amazon_choice_badge = amazon_choice[0] if amazon_choice else None
 
-            # Log scraped data for debugging
-            logger.info(f"Prices Dawa: {price_dawa}")
-            logger.info(f"Prices Nahdi: {price_nahdi}")
-            logger.info(f"Prices Amazon: {price_amazon}")
-            logger.info(f"Amazon Shipping: {ship_amazon}")
-            logger.info(f"Amazon Sold By: {sold_amazon}")
-
-            # Create a record for the current product
+            # Log and create ScrapedData record
             records_to_create.append(ScrapedData(
                 product=product,
                 dawa_price=price_dawa,
+                dawa_title=title_dawa,
+                dawa_availability_info=availability_dawa,
+                dawa_original_price=original_price_dawa,
+                dawa_is_in_stock_msi=is_in_stock_dawa,
+                dawa_offer_text_notag=offer_text_dawa,
                 nahdi_price=price_nahdi,
+                nahdi_title=title_nahdi,
+                nahdi_availability_info=availability_nahdi,
+                nahdi_original_price=original_price_nahdi,
+                nahdi_ordered_qty=ordered_qty_nahdi,
+                nahdi_sold_out=sold_out_nahdi,
+                nahdi_limited_stock=limited_stock_nahdi,
                 amazon_price=price_amazon,
                 amazon_shipping=ship_amazon,
-                amazon_sold_by=sold_amazon
+                amazon_sold_by=sold_amazon,
+                amazon_title=title_amazon,
+                amazon_availability_info=availability_amazon,
+                amazon_discount=discount_amazon,
+                amazon_sold_count=sold_count_amazon,
+                amazon_choice=amazon_choice_badge
             ))
             records_created += 1
 
-        # Bulk create ScrapedData entries for efficiency
+        # Bulk create ScrapedData entries
         ScrapedData.objects.bulk_create(records_to_create)
-        
-        # Return a summary of the task
+
         return {
             'status': 'success',
             'total_products': len(products),
             'records_created': records_created
         }
+
     
     except Exception as e:
         # Log the error and return error details if an exception occurs
@@ -98,47 +169,119 @@ def scrape_user_products_task(product_ids):
         records_to_create = []
         records_created = 0
         loop = asyncio.get_event_loop()
-
         for product in products:
-            # Fetch identifiers for the current product
             dawa_id = [link.identifier for link in product.account_id_links.filter(account_id__name='dawa')]
             nahdi_id = [link.identifier for link in product.account_id_links.filter(account_id__name='nahdi')]
             amazon_id = [link.identifier for link in product.account_id_links.filter(account_id__name='amazon')]
 
-            # Fetch prices for each identifier with delay
-            amazon_prices, amazon_shipping, amazon_sold = (loop.run_until_complete(get_amazon_product_details(amazon_id))
-                                                    if amazon_id else ([None], [None], [None]))
-            # time.sleep(2)  # Add a delay of 2 seconds between requests
-            # print('weight 2 sec')
-            price_dawa = loop.run_until_complete(get_dawa_prices(dawa_id)) if dawa_id else [None]
-            # time.sleep(2)  # Add a delay of 2 seconds between requests
-            # print('weight 2 sec')  # Add a delay of 2 seconds between requests
-            price_nahdi = loop.run_until_complete(get_nahdi_prices(nahdi_id)) if nahdi_id else [None]
-            # time.sleep(2)  # Add a delay of 2 seconds between requests
-            # print('weight 2 sec')            
+            try:
+                # Fetch data from Amazon
+                amazon_titles, amazon_prices, amazon_shipping, amazon_sold, amazon_availability, amazon_discount, amazon_sold_count, amazon_choice = (
+                    loop.run_until_complete(get_amazon_product_details(amazon_id)) if amazon_id else
+                    ([None], [None], [None], [None], [None], [None], [None], [None])
+                )
+                logger.info(f"Amazon data: {amazon_titles}, {amazon_prices}, {amazon_shipping}, {amazon_sold}, {amazon_availability}, {amazon_discount}, {amazon_sold_count}, {amazon_choice}")
 
-            # Extract the first element as we only expect a single value for each
-            price_dawa = price_dawa[0] if price_dawa else None
-            price_nahdi = price_nahdi[0] if price_nahdi else None
+            except Exception as e:
+                logger.error(f"Error fetching Amazon details: {e}")
+                amazon_titles, amazon_prices, amazon_shipping, amazon_sold, amazon_availability, amazon_discount, amazon_sold_count, amazon_choice = [None] * 8
+
+            try:
+                # Fetch data from Dawa
+                dawa_data = loop.run_until_complete(get_dawa_prices(dawa_id)) if dawa_id else [{}]
+
+                if isinstance(dawa_data, list) and dawa_data:
+                    dawa_titles = [item.get('name') for item in dawa_data]
+                    dawa_prices = [item.get('price') for item in dawa_data]
+                    dawa_availability_info = [item.get('availability_info') for item in dawa_data]
+                    dawa_original_prices = [item.get('price_original') for item in dawa_data]
+                    dawa_is_in_stock_msi = [item.get('is_in_stock_msi') for item in dawa_data]
+                    dawa_offer_text = [item.get('offer_text_notag') for item in dawa_data]
+                else:
+                    dawa_titles, dawa_prices, dawa_availability_info, dawa_original_prices, dawa_is_in_stock_msi, dawa_offer_text = [None] * 6
+
+                logger.info(f"Dawa data: {dawa_titles}, {dawa_prices}, {dawa_availability_info}, {dawa_original_prices}, {dawa_is_in_stock_msi}, {dawa_offer_text}")
+
+            except Exception as e:
+                logger.error(f"Error fetching Dawa details: {e}")
+                dawa_titles, dawa_prices, dawa_availability_info, dawa_original_prices, dawa_is_in_stock_msi, dawa_offer_text = [None] * 6
+
+            try:
+                # Fetch data from Nahdi
+                nahdi_data = loop.run_until_complete(get_nahdi_prices(nahdi_id)) if nahdi_id else [{}]
+
+                if isinstance(nahdi_data, list) and nahdi_data:
+                    nahdi_titles = [item.get('name') for item in nahdi_data]
+                    nahdi_prices = [item.get('price') for item in nahdi_data]
+                    nahdi_availability_info = [item.get('availability_info') for item in nahdi_data]
+                    nahdi_original_prices = [item.get('price_original') for item in nahdi_data]
+                    nahdi_ordered_qty = [item.get('ordered_qty') for item in nahdi_data]
+                    nahdi_sold_out = [item.get('sold_out') for item in nahdi_data]
+                    nahdi_limited_stock = [item.get('limited_stock') for item in nahdi_data]
+                else:
+                    nahdi_titles, nahdi_prices, nahdi_availability_info, nahdi_original_prices, nahdi_ordered_qty, nahdi_sold_out, nahdi_limited_stock = [None] * 7
+
+                logger.info(f"Nahdi data: {nahdi_titles}, {nahdi_prices}, {nahdi_availability_info}, {nahdi_original_prices}, {nahdi_ordered_qty}, {nahdi_sold_out}, {nahdi_limited_stock}")
+
+            except Exception as e:
+                logger.error(f"Error fetching Nahdi details: {e}")
+                nahdi_titles, nahdi_prices, nahdi_availability_info, nahdi_original_prices, nahdi_ordered_qty, nahdi_sold_out, nahdi_limited_stock = [None] * 7
+
+            # Assign extracted values
+            price_dawa = dawa_prices[0] if dawa_prices else None
+            title_dawa = dawa_titles[0] if dawa_titles else None
+            availability_dawa = dawa_availability_info[0] if dawa_availability_info else None
+            original_price_dawa = dawa_original_prices[0] if dawa_original_prices else None
+            is_in_stock_dawa = dawa_is_in_stock_msi[0] if dawa_is_in_stock_msi else None
+            offer_text_dawa = dawa_offer_text[0] if dawa_offer_text else None
+
+            price_nahdi = nahdi_prices[0] if nahdi_prices else None
+            title_nahdi = nahdi_titles[0] if nahdi_titles else None
+            availability_nahdi = nahdi_availability_info[0] if nahdi_availability_info else None
+            original_price_nahdi = nahdi_original_prices[0] if nahdi_original_prices else None
+            ordered_qty_nahdi = nahdi_ordered_qty[0] if nahdi_ordered_qty else None
+            sold_out_nahdi = nahdi_sold_out[0] if nahdi_sold_out else None
+            limited_stock_nahdi = nahdi_limited_stock[0] if nahdi_limited_stock else None
+
             price_amazon = amazon_prices[0] if amazon_prices else None
             ship_amazon = amazon_shipping[0] if amazon_shipping else None
             sold_amazon = amazon_sold[0] if amazon_sold else None
+            title_amazon = amazon_titles[0] if amazon_titles else None
+            availability_amazon = amazon_availability[0] if amazon_availability else None
+            discount_amazon = amazon_discount[0] if amazon_discount else None
+            sold_count_amazon = amazon_sold_count[0] if amazon_sold_count else None
+            amazon_choice_badge = amazon_choice[0] if amazon_choice else None
 
-            # Create a record for the current product
+            # Log and create ScrapedData record
             records_to_create.append(ScrapedData(
                 product=product,
                 dawa_price=price_dawa,
+                dawa_title=title_dawa,
+                dawa_availability_info=availability_dawa,
+                dawa_original_price=original_price_dawa,
+                dawa_is_in_stock_msi=is_in_stock_dawa,
+                dawa_offer_text_notag=offer_text_dawa,
                 nahdi_price=price_nahdi,
+                nahdi_title=title_nahdi,
+                nahdi_availability_info=availability_nahdi,
+                nahdi_original_price=original_price_nahdi,
+                nahdi_ordered_qty=ordered_qty_nahdi,
+                nahdi_sold_out=sold_out_nahdi,
+                nahdi_limited_stock=limited_stock_nahdi,
                 amazon_price=price_amazon,
                 amazon_shipping=ship_amazon,
-                amazon_sold_by=sold_amazon
+                amazon_sold_by=sold_amazon,
+                amazon_title=title_amazon,
+                amazon_availability_info=availability_amazon,
+                amazon_discount=discount_amazon,
+                amazon_sold_count=sold_count_amazon,
+                amazon_choice=amazon_choice_badge
             ))
             records_created += 1
 
-        # Bulk create ScrapedData entries for efficiency
+        # Bulk create ScrapedData entries
         ScrapedData.objects.bulk_create(records_to_create)
-        
-        # Return a summary of the task
+
         return {
             'status': 'success',
             'total_products': len(products),

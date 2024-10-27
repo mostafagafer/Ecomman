@@ -1,18 +1,49 @@
-
-
-
 from django.db import models
 from client_profile.models import Product, PromoPlan
-from django.contrib.auth.models import User
 from django.utils.functional import cached_property
+
+
 class ScrapedData(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    dawa_price = models.FloatField(blank=True, null=True)
-    nahdi_price = models.FloatField(blank=True, null=True)
-    amazon_price = models.FloatField(blank=True, null=True)
-    amazon_shipping = models.CharField(max_length=20, blank=True, null=True)
-    amazon_sold_by = models.CharField(max_length=20, blank=True, null=True)
     scraped_at = models.DateTimeField(auto_now_add=True)
+
+    # Amazon attributes 
+    amazon_price = models.FloatField(blank=True, null=True)
+    amazon_shipping = models.CharField(max_length=30, blank=True, null=True)
+    amazon_sold_by = models.CharField(max_length=30, blank=True, null=True)
+    amazon_title = models.CharField(max_length=200, blank=True, null=True)
+    amazon_availability_info = models.CharField(max_length=200, blank=True, null=True)
+    amazon_discount = models.FloatField(blank=True, null=True)
+    amazon_sold_count = models.CharField(max_length=200, blank=True, null=True)
+    amazon_choice = models.BooleanField(default=False)
+    
+    # Dawa attributes
+    dawa_price = models.FloatField(blank=True, null=True)
+    dawa_title = models.CharField(max_length=200, blank=True, null=True)
+    dawa_availability_info = models.IntegerField(blank=True, null=True)
+    dawa_original_price = models.FloatField(blank=True, null=True)
+    dawa_is_in_stock_msi = models.IntegerField(blank=True, null=True)
+    dawa_offer_text_notag = models.CharField(max_length=200, blank=True, null=True)
+
+
+    # Nahdi attributes
+    # name, in_stock, is_in_stock_msi, offer_text_notag
+    nahdi_price = models.FloatField(blank=True, null=True)
+    nahdi_title = models.CharField(max_length=200, blank=True, null=True)
+    nahdi_availability_info = models.IntegerField(blank=True, null=True)
+    nahdi_original_price = models.FloatField(blank=True, null=True)
+    nahdi_ordered_qty = models.FloatField(blank=True, null=True)
+    nahdi_sold_out = models.CharField(max_length=50, blank=True, null=True)
+    nahdi_limited_stock = models.CharField(max_length=50, blank=True, null=True)
+    
+# sku
+# store_en, name
+# ordered_qty
+# price, SAR, default_original_formated
+# sold_out": "No",
+# in_stock(1,0)
+# limited_stock(No, Yes)
+
 
     @cached_property
     def promo_flag(self):
@@ -59,6 +90,17 @@ class ScrapedData(models.Model):
         ratio = self.nahdi_price / self.final_price
         return ratio
 
+    @cached_property
+    def nahdi_discount(self):
+        if self.nahdi_original_price and self.nahdi_price:
+            return (self.nahdi_price / self.nahdi_original_price)*100
+        return 0
+
+    @cached_property
+    def dawa_discount(self):
+        if self.dawa_original_price and self.dawa_price:
+            return (self.dawa_price / self.dawa_original_price)*100
+        return 0
 
 
     @cached_property
@@ -90,7 +132,6 @@ class ScrapedData(models.Model):
         complience_score = (1-(abs_diff/(0.5*self.final_price)))
 
         return complience_score
-
 
 
     @cached_property
@@ -179,40 +220,38 @@ class ScrapedData(models.Model):
         return opps
         
 
-
-    # def __str__(self):
-    #     return (
-    #         f"Scraped data for Product {self.product.TITLE} "
-    #         f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}, "
-    #         f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}, "
-    #         f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}, "
-    #         f"Amazon Shipping: {self.amazon_shipping if self.amazon_shipping else 'N/A'}, "
-    #         f"Amazon Sold By: {self.amazon_sold_by if self.amazon_sold_by else 'N/A'}, "
-    #         f"Promo Flag: {'Yes' if self.promo_flag else 'No'}, "
-    #         f"Discount Percentage: {self.discount_percentage:.2f}%, "
-    #         f"Final Price: {self.final_price:.2f}, "
-    #         f"Price Deviation Score: {self.price_deviation_score:.2f}, "
-    #         f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}, "
-    #         f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}, "
-    #         f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}, "
-    #         f"Amazon Compliance Ratio: {self.amazon_ratio:.2f} " if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A, "
-    #         f"Dawa Compliance Ratio: {self.dawa_ratio:.2f} " if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A, "
-    #         f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f} " if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A, "
-    #         f"Price Compliance Score: {self.pcs:.2f}%, "
-    #         f"Online Price Performance Score: {self.opps:.2f}%, "
-
-
-    #     )
-
     def __str__(self):
         # Gather all details in a list for clarity and manage None cases directly within formatting
         details = [
             f"Scraped data for Product {self.product.TITLE}",
-            f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}",
-            f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}",
+
             f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}",
             f"Amazon Shipping: {self.amazon_shipping if self.amazon_shipping is not None else 'N/A'}",
             f"Amazon Sold By: {self.amazon_sold_by if self.amazon_sold_by is not None else 'N/A'}",
+            f"Amazon Title: {self.amazon_title if self.amazon_title else 'N/A'}",
+            f"Amazon Availability: {self.amazon_availability_info if self.amazon_availability_info else 'N/A'}",
+            f"Amazon Discount: {self.amazon_discount if self.amazon_discount is not None else 'N/A'}",
+            f"Amazon Sold Count: {self.amazon_sold_count if self.amazon_sold_count else 'N/A'}",
+            f"Amazon Choice: {'Yes' if self.amazon_choice else 'No'}"
+
+            f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}",
+            f"Dawa Title: {self.dawa_title if self.dawa_title else 'N/A'}",
+            f"Dawa Availability Info: {self.dawa_availability_info if self.dawa_availability_info is not None else 'N/A'}",
+            f"Dawa Original Price: {self.dawa_original_price if self.dawa_original_price is not None else 'N/A'}",
+            f"Dawa In Stock MSI: {self.dawa_is_in_stock_msi if self.dawa_is_in_stock_msi is not None else 'N/A'}",
+            f"Dawa Offer Text: {self.dawa_offer_text_notag if self.dawa_offer_text_notag else 'N/A'}",
+            f"Dawa Discount: {self.dawa_discount if self.dawa_discount is not None else 'N/A'}",
+
+            f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}",
+            f"Nahdi Title: {self.nahdi_title if self.nahdi_title else 'N/A'}",
+            f"Nahdi Availability Info: {self.nahdi_availability_info if self.nahdi_availability_info is not None else 'N/A'}",
+            f"Nahdi Original Price: {self.nahdi_original_price if self.nahdi_original_price is not None else 'N/A'}",
+            f"Nahdi Ordered Quantity: {self.nahdi_ordered_qty if self.nahdi_ordered_qty is not None else 'N/A'}",
+            f"Nahdi Sold Out: {self.nahdi_sold_out if self.nahdi_sold_out else 'N/A'}",
+            f"Nahdi Limited Stock: {self.nahdi_limited_stock if self.nahdi_limited_stock else 'N/A'}",
+            f"Nahdi Discount: {self.nahdi_discount if self.nahdi_discount is not None else 'N/A'}",
+
+
             f"Promo Flag: {'Yes' if self.promo_flag else 'No'}",
             f"Discount Percentage: {self.discount_percentage:.2f}%",
             f"Final Price: {self.final_price:.2f}",
@@ -234,126 +273,3 @@ class ScrapedData(models.Model):
         # Join details with commas for readability and return a single formatted string
         return ", ".join(details)
 
-# from django.db import models
-# from client_profile.models import Product, PromoPlan
-# from decimal import Decimal, ROUND_HALF_UP
-
-# from django.db import models
-# from decimal import Decimal, ROUND_HALF_UP
-# from client_profile.models import Product, c
-
-# class ScrapedData(models.Model):
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     dawa_price = models.FloatField(blank=True, null=True)
-#     nahdi_price = models.FloatField(blank=True, null=True)
-#     amazon_price = models.FloatField(blank=True, null=True)
-#     amazon_shipping = models.CharField(max_length=20, blank=True, null=True)
-#     amazon_sold_by = models.CharField(max_length=20, blank=True, null=True)
-#     scraped_at = models.DateTimeField(auto_now_add=True)
-#     final_desired_price = models.FloatField(blank=True, null=True)
-#     discount_amount = models.FloatField(blank=True, null=True)
-#     pds = models.FloatField(blank=True, null=True)
-#     pcs = models.FloatField(blank=True, null=True)
-#     opps = models.FloatField(blank=True, null=True)
-#     amazon_compliance = models.BooleanField(default=False)
-#     nahdi_compliance = models.BooleanField(default=False)
-#     dawa_compliance = models.BooleanField(default=False)
-
-#     def __str__(self):
-#         return (
-#             f"Scraped data for Product {self.product.TITLE} "
-#             f"(ASIN: {self.product.ASIN}) at {self.scraped_at}: "
-#             f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}, "
-#             f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}, "
-#             f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}, "
-#             f"Amazon Shipping: {self.amazon_shipping if self.amazon_shipping else 'N/A'}, "
-#             f"Amazon Sold By: {self.amazon_sold_by if self.amazon_sold_by else 'N/A'}"
-#         )
-
-#     def discount_amount(self):
-#         try:
-#             promo_plan = PromoPlan.objects.get(
-#                 product=self.product,
-#                 start_date__lte=self.scraped_at,
-#                 end_date__gte=self.scraped_at
-#             )
-#             return (promo_plan.discount_percentage / 100) * self.product.RSP_VAT
-#         except PromoPlan.DoesNotExist:
-#             return 0.0
-
-#     def calculate_final_desired_price(self):
-#         # Query all products
-#         product = self.product
-        
-#         # Check for applicable promo plans for this product within the timeline
-#         promo_plans = PromoPlan.objects.filter(
-#             product=product,
-#             start_date__lte=self.scraped_at.date(),
-#             end_date__gte=self.scraped_at.date()
-#         )
-
-#         if promo_plans.exists():
-#             # Use the desired_price from any applicable promo plan
-#             promo_plan = promo_plans.first()  # Get the first matching promo plan
-#             final_price = promo_plan.desired_price
-#         else:
-#             # No promo plan is applicable, use RSP_VAT
-#             final_price = product.RSP_VAT
-
-#         return float(final_price)
-    
-#     # def calculate_final_desired_price(self):
-#     #     try:
-#     #         promo_plan = PromoPlan.objects.get(
-#     #             product=self.product,
-#     #             start_date__lte=self.scraped_at,
-#     #             end_date__gte=self.scraped_at
-#     #         )
-#     #         return (promo_plan.discount_percentage / 100) * self.product.RSP_VAT
-#     #     except PromoPlan.DoesNotExist:
-#     #         return 0.0
-
-
-#     def save(self, *args, **kwargs):
-#         self.discount_amount = self.discount_amount
-
-
-#         # Calculate the final desired price
-#         self.final_desired_price = self.calculate_final_desired_price()
-
-#         # Update compliance flags based on the final desired price
-#         self.amazon_compliance = self.amazon_price and self.final_desired_price and (
-#             self.amazon_price <= self.final_desired_price * 1.1 and self.amazon_price >= self.final_desired_price * 0.9
-#         )
-#         self.nahdi_compliance = self.nahdi_price and self.final_desired_price and (
-#             self.nahdi_price <= self.final_desired_price * 1.1 and self.nahdi_price >= self.final_desired_price * 0.9
-#         )
-#         self.dawa_compliance = self.dawa_price and self.final_desired_price and (
-#             self.dawa_price <= self.final_desired_price * 1.1 and self.dawa_price >= self.final_desired_price * 0.9
-#         )
-
-#         # Calculate PDS and PCS
-#         store_prices = [self.amazon_price, self.nahdi_price, self.dawa_price]
-#         self.pds = calculate_pds(self.final_desired_price, store_prices)
-#         self.pcs = round(calculate_pcs(self.final_desired_price, store_prices), 2)
-#         self.opps = round((self.pcs + self.pds) / 2, 2)
-
-#         # Save the instance
-#         super().save(*args, **kwargs)
-
-# def calculate_pds(set_price, store_prices):
-#     if not store_prices:
-#         return 0
-#     average_deviation = sum(abs(Decimal(price) - Decimal(set_price)) for price in store_prices) / len(store_prices)
-#     pds = (1 - (average_deviation / Decimal(set_price))) * 100
-#     pds = pds.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-#     return float(pds)
-
-# def calculate_pcs(set_price, store_prices, acceptable_range_percentage=10):
-#     if not store_prices:
-#         return 0
-#     acceptable_range = set_price * (acceptable_range_percentage / 100)
-#     compliant_stores = sum(1 for price in store_prices if set_price - acceptable_range <= price <= set_price + acceptable_range)
-#     total_stores = len(store_prices)
-#     pcs = (compliant_stores / total_stores) * 100
-#     return pcs

@@ -15,5 +15,5 @@ urlpatterns = [
     path('scrape/', views.scrape_user_products_view, name='trigger_scrape_for_user_products'),
 
 
-    path('', views.dashboard_view, name='dashboard'),
+    # path('', views.dashboard_view, name='dashboard'),
 ]
