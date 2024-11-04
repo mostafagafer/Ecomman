@@ -27,7 +27,6 @@ class ScrapedData(models.Model):
 
 
     # Nahdi attributes
-    # name, in_stock, is_in_stock_msi, offer_text_notag
     nahdi_price = models.FloatField(blank=True, null=True)
     nahdi_title = models.CharField(max_length=200, blank=True, null=True)
     nahdi_availability_info = models.IntegerField(blank=True, null=True)
@@ -36,15 +35,6 @@ class ScrapedData(models.Model):
     nahdi_sold_out = models.CharField(max_length=50, blank=True, null=True)
     nahdi_limited_stock = models.CharField(max_length=50, blank=True, null=True)
     
-# sku
-# store_en, name
-# ordered_qty
-# price, SAR, default_original_formated
-# sold_out": "No",
-# in_stock(1,0)
-# limited_stock(No, Yes)
-
-
     @cached_property
     def promo_flag(self):
         return PromoPlan.objects.filter(
@@ -67,7 +57,6 @@ class ScrapedData(models.Model):
         rsp_vat = self.product.RSP_VAT
         discount = self.discount_percentage / 100
         return rsp_vat - (discount * rsp_vat)
-
 
     @cached_property
     def amazon_ratio(self):
@@ -102,7 +91,6 @@ class ScrapedData(models.Model):
             return (self.dawa_price / self.dawa_original_price)*100
         return 0
 
-
     @cached_property
     def amazon_compliance_score(self):
         if self.final_price is None or self.amazon_price is None:
@@ -133,7 +121,6 @@ class ScrapedData(models.Model):
 
         return complience_score
 
-
     @cached_property
     def amazon_compliance_flag(self):
         if self.final_price is None or self.amazon_price is None:
@@ -163,7 +150,6 @@ class ScrapedData(models.Model):
         upper_limit = self.final_price * 1.1
 
         return lower_limit <= self.nahdi_price <= upper_limit
-
 
     @cached_property
     def price_deviation_score(self):
@@ -208,7 +194,6 @@ class ScrapedData(models.Model):
         if valid_scores:
             return (sum(valid_scores) / len(valid_scores))*100
         return None  # Return None if no valid scores
-
 
     @cached_property
     def opps(self):
@@ -268,6 +253,84 @@ class ScrapedData(models.Model):
             f"Price Compliance Score: {self.pcs:.2f}%",
             f"ADS: {self.account_deviation_score:.2f} " if self.account_deviation_score is not None else "ADS: N/A"
             f"Online Price Performance Score: {self.opps:.2f}%"
+        ]
+        
+        # Join details with commas for readability and return a single formatted string
+        return ", ".join(details)
+
+
+class ScrapedBulkData(models.Model):
+    # product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    scraped_at = models.DateTimeField(auto_now_add=True)
+
+    # Store the search term as a simple string for clarity and flexibility
+    key_name = models.CharField(max_length=100)  # Either the category or subcategory name
+
+    # Amazon attributes 
+    amazon_price = models.FloatField(blank=True, null=True)
+    amazon_title = models.CharField(max_length=200, blank=True, null=True)
+    amazon_sku = models.CharField(max_length=200, blank=True, null=True)
+    amazon_original_price = models.FloatField(blank=True, null=True)
+
+    # Dawa attributes
+    dawa_price = models.FloatField(blank=True, null=True)
+    dawa_title = models.CharField(max_length=200, blank=True, null=True)
+    dawa_sku = models.CharField(max_length=200, blank=True, null=True)
+    dawa_original_price = models.FloatField(blank=True, null=True)
+    dawa_offer_text_notag = models.CharField(max_length=200, blank=True, null=True)
+
+    # Nahdi attributes
+    nahdi_price = models.FloatField(blank=True, null=True)
+    nahdi_title = models.CharField(max_length=200, blank=True, null=True)
+    nahdi_sku = models.CharField(max_length=200, blank=True, null=True)
+    nahdi_original_price = models.FloatField(blank=True, null=True)
+    nahdi_ordered_qty = models.FloatField(blank=True, null=True)
+
+
+    @cached_property
+    def nahdi_discount(self):
+        if self.nahdi_original_price and self.nahdi_price:
+            return (self.nahdi_price / self.nahdi_original_price)*100
+        return 0
+
+    @cached_property
+    def dawa_discount(self):
+        if self.dawa_original_price and self.dawa_price:
+            return (self.dawa_price / self.dawa_original_price)*100
+        return 0
+
+    @cached_property
+    def amazon_discount(self):
+        if self.amazon_original_price and self.amazon_price:
+            return (self.amazon_price / self.amazon_original_price)*100
+        return 0
+
+
+        
+
+    def __str__(self):
+        # Gather all details in a list for clarity and manage None cases directly within formatting
+        details = [
+            f"Scraped data for Key {self.key_name}",
+
+            f"Amazon Price: {self.amazon_price if self.amazon_price is not None else 'N/A'}",
+            f"Amazon Title: {self.amazon_title if self.amazon_title else 'N/A'}",
+            f"Amazon SKU: {self.amazon_sku if self.amazon_sku else 'N/A'}",
+            f"Amazon Discount: {self.amazon_discount if self.amazon_discount is not None else 'N/A'}",
+
+            f"Dawa Price: {self.dawa_price if self.dawa_price is not None else 'N/A'}",
+            f"Dawa Title: {self.dawa_title if self.dawa_title else 'N/A'}",
+            f"Amazon SKU: {self.dawa_sku if self.dawa_sku else 'N/A'}",
+            f"Dawa Original Price: {self.dawa_original_price if self.dawa_original_price is not None else 'N/A'}",
+            f"Dawa Offer Text: {self.dawa_offer_text_notag if self.dawa_offer_text_notag else 'N/A'}",
+            f"Dawa Discount: {self.dawa_discount if self.dawa_discount is not None else 'N/A'}",
+
+            f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}",
+            f"Nahdi Title: {self.nahdi_title if self.nahdi_title else 'N/A'}",
+            f"Nahdi SKU: {self.nahdi_sku if self.nahdi_sku else 'N/A'}",
+            f"Nahdi Original Price: {self.nahdi_original_price if self.nahdi_original_price is not None else 'N/A'}",
+            f"Nahdi Ordered Quantity: {self.nahdi_ordered_qty if self.nahdi_ordered_qty is not None else 'N/A'}",
+            f"Nahdi Discount: {self.nahdi_discount if self.nahdi_discount is not None else 'N/A'}",
         ]
         
         # Join details with commas for readability and return a single formatted string

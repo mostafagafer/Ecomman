@@ -1,8 +1,9 @@
 from celery import shared_task
 from client_profile.models import Profile  # Ensure this import matches the app where Profile is located
-from .models import Product, ScrapedData
+from .models import Product, ScrapedData, ScrapedBulkData
 from .selenium_codes.Scrapper_functions import scrape_prices_from_dawa, scrape_prices_from_nahdi, scrape_prices_from_amazon 
 from .selenium_codes.Requests_functions import *
+from .selenium_codes.Requests_functions_Bulk import *
 import random
 import psutil
 import time
@@ -13,9 +14,9 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 
-
+# Scheduled tasks
 @shared_task
-def scrape_prices_task(sample_size=50):
+def scheduled_products_scraper(sample_size=50):
     try:
         # Fetch all products
         all_products = Product.objects.all()
@@ -158,8 +159,102 @@ def scrape_prices_task(sample_size=50):
             'error': str(e)
         }
 
+@shared_task
+def scheduled_bulk_scraper(sample_size=50):
+    try:
+        # Fetch all products
+        all_products = Product.objects.all()
+        
+        # Select a random sample of products
+        if all_products.count() > sample_size:
+            products = random.sample(list(all_products), sample_size)
+        else:
+            products = all_products
+        
+        records_to_create = []
+        records_created = 0
+        loop = asyncio.get_event_loop()
+
+        # Initialize a dictionary for collecting all queries
+        all_queries = {}
+
+        # Collect unique queries across all products
+        for product in products:
+            if product.category:
+                all_queries[product.category.name] = 20  # Use 20 for category
+            if product.subcategory:
+                all_queries[product.subcategory.name] = 10  # Use 10 for subcategory
+
+        # Extract unique queries and their corresponding num_products
+        unique_queries = list(all_queries.keys())
+        num_products_list = [all_queries[query] for query in unique_queries]
+
+        # Fetch data from Dawa and Nahdi outside the product loop
+        try:
+            dawa_data = [
+                loop.run_until_complete(get_dawa_details([query], num_products))
+                for query, num_products in zip(unique_queries, num_products_list)
+            ]
+            # Flatten the list of dawa_data results
+            dawa_data = [item for sublist in dawa_data for item in sublist]
+        except Exception as e:
+            logger.error(f"Error fetching data from Dawa: {str(e)}")
+            dawa_data = []
+
+        try:
+            nahdi_data = [
+                loop.run_until_complete(get_nahdi_details([query], num_products))
+                for query, num_products in zip(unique_queries, num_products_list)
+            ]
+            # Flatten the list of nahdi_data results
+            nahdi_data = [item for sublist in nahdi_data for item in sublist]
+        except Exception as e:
+            logger.error(f"Error fetching data from Nahdi: {str(e)}")
+            nahdi_data = []
+
+        # Process the Dawa fetched data and append to records_to_create
+        for entry in dawa_data:
+            records_to_create.append(ScrapedBulkData(
+                key_name=entry['key'],  # Either category or subcategory name
+                dawa_price=entry['price'],
+                dawa_title=entry['name'],
+                dawa_original_price=entry['price_original'],
+                dawa_offer_text_notag=entry['offer_text_notag'],
+                dawa_sku=entry['sku']
+            ))
+            records_created += 1
+
+        # Process the Nahdi fetched data and append to records_to_create
+        for entry in nahdi_data:
+            records_to_create.append(ScrapedBulkData(
+                key_name=entry['key'],  # Either category or subcategory name
+                nahdi_price=entry['price'],
+                nahdi_title=entry['name'],
+                nahdi_original_price=entry['price_original'],
+                nahdi_ordered_qty=entry['ordered_qty'],
+                nahdi_sku=entry['sku']
+            ))
+            records_created += 1
+
+        # Bulk create ScrapedBulkData entries
+        ScrapedBulkData.objects.bulk_create(records_to_create)
+
+        return {
+            'status': 'success',
+            'total_products': len(products),
+            'records_created': records_created
+        }
+    
+    except Exception as e:
+        logger.error(f"Error in scrape_Bulk_product_task: {str(e)}")
+        return {
+            'status': 'failed',
+            'error': str(e)
+        }
 
 
+
+# Trigerred tasks
 @shared_task
 def scrape_user_products_task(product_ids):
     try:
@@ -295,6 +390,113 @@ def scrape_user_products_task(product_ids):
             'status': 'failed',
             'error': str(e)
         }
+
+@shared_task
+def scrape_user_Bulk_product_task(product_ids):
+    try:
+        # Fetch the products based on the passed IDs
+        products = Product.objects.filter(id__in=product_ids)
+        
+        records_to_create = []
+        records_created = 0
+        loop = asyncio.get_event_loop()
+
+        # Initialize a dictionary for collecting all queries
+        all_queries = {}
+
+        # Collect unique queries across all products
+        for product in products:
+            if product.category:
+                all_queries[product.category.name] = 20  # Use 20 for category
+            if product.subcategory:
+                all_queries[product.subcategory.name] = 10  # Use 10 for subcategory
+
+        # Extract unique queries and their corresponding num_products
+        unique_queries = list(all_queries.keys())
+        num_products_list = [all_queries[query] for query in unique_queries]
+
+        # Fetch data from Dawa and Nahdi outside the product loop
+        try:
+            dawa_data = [
+                loop.run_until_complete(get_dawa_details([query], num_products))
+                for query, num_products in zip(unique_queries, num_products_list)
+            ]
+            # Flatten the list of dawa_data results
+            dawa_data = [item for sublist in dawa_data for item in sublist]
+        except Exception as e:
+            logger.error(f"Error fetching data from Dawa: {str(e)}")
+            dawa_data = []
+
+        try:
+            nahdi_data = [
+                loop.run_until_complete(get_nahdi_details([query], num_products))
+                for query, num_products in zip(unique_queries, num_products_list)
+            ]
+            # Flatten the list of nahdi_data results
+            nahdi_data = [item for sublist in nahdi_data for item in sublist]
+        except Exception as e:
+            logger.error(f"Error fetching data from Nahdi: {str(e)}")
+            nahdi_data = []
+
+        # Process the Dawa fetched data and append to records_to_create
+        for entry in dawa_data:
+            records_to_create.append(ScrapedBulkData(
+                key_name=entry['key'],  # Either category or subcategory name
+                dawa_price=entry['price'],
+                dawa_title=entry['name'],
+                dawa_original_price=entry['price_original'],
+                dawa_offer_text_notag=entry['offer_text_notag'],
+                dawa_sku=entry['sku']
+            ))
+            records_created += 1
+
+        # Process the Nahdi fetched data and append to records_to_create
+        for entry in nahdi_data:
+            records_to_create.append(ScrapedBulkData(
+                key_name=entry['key'],  # Either category or subcategory name
+                nahdi_price=entry['price'],
+                nahdi_title=entry['name'],
+                nahdi_original_price=entry['price_original'],
+                nahdi_ordered_qty=entry['ordered_qty'],
+                nahdi_sku=entry['sku']
+            ))
+            records_created += 1
+
+        # Bulk create ScrapedBulkData entries
+        ScrapedBulkData.objects.bulk_create(records_to_create)
+
+        return {
+            'status': 'success',
+            'total_products': len(products),
+            'records_created': records_created
+        }
+    
+    except Exception as e:
+        logger.error(f"Error in scrape_Bulk_product_task: {str(e)}")
+        return {
+            'status': 'failed',
+            'error': str(e)
+        }
+
+            # nahdi_id = [link.identifier for link in product.account_id_links.filter(account_id__name='nahdi')]
+            # amazon_id = [link.identifier for link in product.account_id_links.filter(account_id__name='amazon')]
+
+            # try:
+            #     # Fetch data from Amazon
+            #     amazon_titles, amazon_prices, amazon_shipping, amazon_sold, amazon_availability, amazon_discount, amazon_sold_count, amazon_choice = (
+            #         loop.run_until_complete(get_amazon_product_details(amazon_id)) if amazon_id else
+            #         ([None], [None], [None], [None], [None], [None], [None], [None])
+            #     )
+            #     logger.info(f"Amazon data: {amazon_titles}, {amazon_prices}, {amazon_shipping}, {amazon_sold}, {amazon_availability}, {amazon_discount}, {amazon_sold_count}, {amazon_choice}")
+
+            # except Exception as e:
+            #     logger.error(f"Error fetching Amazon details: {e}")
+            #     amazon_titles, amazon_prices, amazon_shipping, amazon_sold, amazon_availability, amazon_discount, amazon_sold_count, amazon_choice = [None] * 8
+
+
+            # try:
+            #     # Fetch data from Dawa
+            #     dawa_data = loop.run_until_complete(get_dawa_details([dawa_query], num_products))
 
 
 # # @shared_task

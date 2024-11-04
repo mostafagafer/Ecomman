@@ -268,7 +268,6 @@ def process_nahdi_response(data):
             })
     return nahdi_data
 
-
 # Asynchronous task to fetch and return Nahdi data for multiple SKUs
 async def get_nahdi_prices(nahdi_queries):
     async with aiohttp.ClientSession() as session:
@@ -288,27 +287,6 @@ async def get_nahdi_prices(nahdi_queries):
             }
             for data in all_nahdi_data
         ]
-
-# Process the Nahdi response to extract prices
-# def process_nahdi_response(data):
-#     prices = []
-#     for result in data.get('results', []):
-#         for hit in result.get('hits', []):
-#             price = hit.get('price', {}).get('SAR', {}).get('default')
-#             prices.append(price)
-#     return prices
-
-# # Asynchronous task to fetch and return data for multiple SKUs
-# async def get_nahdi_prices(nahdi_queries):
-#     async with aiohttp.ClientSession() as session:
-#         tasks = [fetch_nahdi_data(session, query) for query in nahdi_queries]
-        
-#         # Wait for all tasks to complete
-#         responses = await asyncio.gather(*tasks)
-
-#         # Process responses to extract prices
-#         all_prices = [process_nahdi_response(response) for response in responses]
-#         return [price[0] if price else None for price in all_prices]
 
 # Fetch Dawa Data Asynchronously
 async def fetch_dawa_data(session, query):
@@ -376,8 +354,6 @@ def process_dawa_response(data):
             })
     return dawa_data
 
-
-
 # Asynchronous task to fetch and return Dawa data for multiple queries
 async def get_dawa_prices(dawa_queries):
     async with aiohttp.ClientSession() as session:
@@ -397,24 +373,3 @@ async def get_dawa_prices(dawa_queries):
             for data in all_dawa_data
         ]
 
-
-# Process the Dawa response to extract prices
-# def process_dawa_response(data):
-#     prices = []
-#     for result in data.get('results', []):
-#         for hit in result.get('hits', []):
-#             price = hit.get('price', {}).get('SAR', {}).get('default')
-#             prices.append(price)
-#     return prices
-
-# # Asynchronous task to fetch and return data for multiple queries
-# async def get_dawa_prices(dawa_queries):
-#     async with aiohttp.ClientSession() as session:
-#         tasks = [fetch_dawa_data(session, query) for query in dawa_queries]
-        
-#         # Wait for all tasks to complete
-#         responses = await asyncio.gather(*tasks)
-
-#         # Process responses to extract prices
-#         all_prices = [process_dawa_response(response) for response in responses]
-#         return [price[0] if price else None for price in all_prices]  # Select the first price if multiple

@@ -242,9 +242,14 @@ else:
 
 CELERY_BEAT_SCHEDULE = {
     'scrape-prices-every-4-hours': {
-        'task': 'scrapper.tasks.scrape_prices_task',
+        'task': 'scrapper.tasks.scheduled_products_scraper',
         'schedule': 14400.0,  # 4 hours
     },
+    'scrape-prices-every-4-hours': {
+        'task': 'scrapper.tasks.scheduled_bulk_scraper',
+        'schedule': 14400.0,  # 4 hours
+    },
+
 }
 
 CELERY_ACCEPT_CONTENT = ['json']

@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 # from django.db.models.functions import Coalesce
 from .dash_apps.app import plot_dashboard
 import pandas as pd
-from scrapper.tasks import scrape_user_products_task  # Import your task
+from scrapper.tasks import scrape_user_products_task, scrape_user_Bulk_product_task
 
 @login_required
 def scrape_user_products_view(request):
@@ -24,45 +24,59 @@ def scrape_user_products_view(request):
     # print("product_ids:", user_products)
 
     # Trigger the Celery task, passing the product IDs
+    print('scraping products for user')
     scrape_user_products_task.delay(product_ids)
     
+    print('scraping bulk products for user')
+    scrape_user_Bulk_product_task.delay(product_ids)
+
     # Redirect to a page or render a template
-    return render(request, 'dashboard/price.html') # Assuming 'price.html' is the path to your template
+    return render(request, 'dashboard/price.html') 
 
-
-@login_required
 def dashboard_view(request):
     profile = Profile.objects.get(user=request.user)
     scraped_data = ScrapedData.objects.filter(product__profile=profile)
-    # for item in scraped_data:
-    #     print('here we go')
-    #     print("Product:", item.product.TITLE, "Amazon Price:", item.amazon_price, "Nahdi Price:", item.nahdi_price, "Dawa Price:", item.dawa_price)
+    
+    # Get unique accounts associated with the user
+    user_accounts = list(profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True))
 
     # Prepare data in a format for Dash
     data = {
-        'scraped_at': [item.scraped_at.isoformat() for item in scraped_data],
-        'opps': [item.opps for item in scraped_data],
-        'Brand': [item.product.brand for item in scraped_data],
-        'Category': [item.product.category for item in scraped_data],
-        'Subcategory': [item.product.subcategory for item in scraped_data],
-        'Product': [item.product.TITLE for item in scraped_data],
-        'amazon_price': [item.amazon_price for item in scraped_data],
-        'nahdi_price': [item.nahdi_price for item in scraped_data],
-        'dawa_price': [item.dawa_price for item in scraped_data],
-        # 'amazon_price': [item.amazon_price if item.amazon_price is not None else None for item in scraped_data],
-        # 'nahdi_price': [item.nahdi_price if item.nahdi_price is not None else None for item in scraped_data],
-        # 'dawa_price': [item.dawa_price if item.dawa_price is not None else None for item in scraped_data],
+        'scraped_at': [],
+        'RSP_VAT': [],
+        'amazon_price': [],
+        'nahdi_price': [],
+        'dawa_price': [],
+        'opps': [],
+        'Brand': [],
+        'Category': [],
+        'Subcategory': [],
+        'Product': [],
+        'Account': []
     }
 
-    # Print the data dictionary for debugging
-    # print("Data dictionary:", data)
+    for item in scraped_data:
+        data['scraped_at'].append(item.scraped_at.isoformat())
+        data['RSP_VAT'].append(item.product.RSP_VAT)
+        data['amazon_price'].append(item.amazon_price if item.amazon_price is not None else None)
+        data['nahdi_price'].append(item.nahdi_price if item.nahdi_price is not None else None)
+        data['dawa_price'].append(item.dawa_price if item.dawa_price is not None else None)
+        data['opps'].append(item.opps)
+        data['Brand'].append(item.product.brand)
+        data['Category'].append(item.product.category)
+        data['Subcategory'].append(item.product.subcategory)
+        data['Product'].append(item.product.TITLE)
+
+        # Ensure one entry per product item by concatenating account names
+        accounts = item.product.accounts_id.all()
+        account_names = [account.name for account in accounts]
+        data['Account'].append(", ".join(account_names) if account_names else None)
 
     # Initialize the Dash app
-    plot_dashboard(data)
+    plot_dashboard(data, user_accounts)
 
     context = {}
     return render(request, 'dashboard/dashboard.html', context)
-
 
 @login_required
 def performance_view(request):
