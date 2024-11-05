@@ -228,26 +228,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Celery settings
-# CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
-# ENVIRONMENT = 'develpment'
+
 if ENVIRONMENT == 'development':
-    CELERY_BROKER_URL = 'redis://localhost:6379'  # Use Redis as the broker without specifying the database number
+    CELERY_BROKER_URL = 'redis://localhost:6379'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 else:
     CELERY_BROKER_URL = env('REDIS_URL')
     CELERY_RESULT_BACKEND = env('REDIS_URL')
 
-# CELERY_RESULT_BACKEND = 'redis://localhost:6379'
-# CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_BEAT_SCHEDULE = {
-    'scrape-prices-every-4-hours': {
+    'product-scrape-every-6-hours': {
         'task': 'scrapper.tasks.scheduled_products_scraper',
-        'schedule': 14400.0,  # 4 hours
+        'schedule': 21600.0,  # 6 hours
     },
-    'scrape-prices-every-4-hours': {
+    'bulk-scrape-every-12-hours': {
         'task': 'scrapper.tasks.scheduled_bulk_scraper',
-        'schedule': 14400.0,  # 4 hours
+        'schedule': 43200.0,  # 12 hours
     },
 
 }

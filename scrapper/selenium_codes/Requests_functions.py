@@ -166,6 +166,7 @@ async def fetch_amazon_product(session, product_id):
         logging.error(f"Error fetching data for {product_id}: {e}")
         return None, None, None
 
+# Asynchronous task to fetch and return data for multiple Amazon product IDs
 async def get_amazon_product_details(product_ids):
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_amazon_product(session, product_id) for product_id in product_ids]
@@ -181,19 +182,7 @@ async def get_amazon_product_details(product_ids):
 
         return titles, prices_amazon, amazon_shipping, amazon_sold, availability_infos, discount_percentages, sold_counts, amazons_choices
 
-# Asynchronous task to fetch and return data for multiple Amazon product IDs
-# async def get_amazon_product_details(product_ids):
-#     async with aiohttp.ClientSession() as session:
-#         tasks = [fetch_amazon_product(session, product_id) for product_id in product_ids]
-        
-#         # Wait for all tasks to complete
-#         responses = await asyncio.gather(*tasks)
-        
-#         # Unzip the responses into separate lists, handling None cases if they arise
-#         prices_amazon, amazon_shipping, amazon_sold = map(list, zip(*responses)) if responses else ([], [], [])
-        
-#         return prices_amazon, amazon_shipping, amazon_sold
-
+# Fetch Nahdi Data Asynchronously
 async def fetch_nahdi_data(session, query):
     url = 'https://h9x4ih7m99-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.3)%3B%20Browser%3B%20instantsearch.js%20(4.63.0)%3B%20Magento2%20integration%20(3.13.3)%3B%20JS%20Helper%20(3.16.1)'
     headers = {
