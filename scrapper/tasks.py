@@ -189,7 +189,19 @@ def scheduled_bulk_scraper(sample_size=50):
         unique_queries = list(all_queries.keys())
         num_products_list = [all_queries[query] for query in unique_queries]
 
-        # Fetch data from Dawa and Nahdi outside the product loop
+        # Fetch data from Amazon, Dawa and Nahdi
+        try:
+            amazon_data = [
+                loop.run_until_complete(get_amazon_details([query], num_products))
+                for query, num_products in zip(unique_queries, num_products_list)
+            ]
+            # Flatten the list of amazon_data results
+            amazon_data = [item for sublist in amazon_data for item in sublist]
+        except Exception as e:
+            logger.error(f"Error fetching data from Amazon: {str(e)}")
+            amazon_data = []
+
+
         try:
             dawa_data = [
                 loop.run_until_complete(get_dawa_details([query], num_products))
@@ -233,6 +245,20 @@ def scheduled_bulk_scraper(sample_size=50):
                 nahdi_original_price=entry['price_original'],
                 nahdi_ordered_qty=entry['ordered_qty'],
                 nahdi_sku=entry['sku']
+            ))
+            records_created += 1
+
+
+        # Process the Amazon fetched data and append to records_to_create
+        for entry in amazon_data:
+            records_to_create.append(ScrapedBulkData(
+                key_name=entry['key'],  # Either category or subcategory name
+                amazon_price=entry['current_price'],
+                amazon_title=entry['title'],
+                amazon_original_price=entry['original_price'],
+                amazon_sku=entry['ASIN'],
+                # amazon_discount=entry['amazon_discount'],
+                # amazon_purchase_count=entry['purchase_count'],
             ))
             records_created += 1
 
@@ -415,8 +441,7 @@ def scrape_user_Bulk_product_task(product_ids):
         unique_queries = list(all_queries.keys())
         num_products_list = [all_queries[query] for query in unique_queries]
 
-        # Fetch data from Dawa and Nahdi outside the product loop
-
+        # Fetch data from Amazon, Dawa and Nahdi
         try:
             amazon_data = [
                 loop.run_until_complete(get_amazon_details([query], num_products))
