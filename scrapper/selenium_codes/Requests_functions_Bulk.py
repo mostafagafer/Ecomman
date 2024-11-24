@@ -5,6 +5,7 @@ import pandas as pd
 import re
 import json
 import logging
+from scrapper.utils import parse_discount_from_text
 
 
 async def fetch_amazon_search_results(session, query, num_products):
@@ -115,8 +116,6 @@ async def fetch_amazon_search_results(session, query, num_products):
 
     return products
 
-# Asynchronous task to fetch and return data for multiple Amazon product IDs
-# Asynchronous task to fetch and return data for Amazon queries
 async def get_amazon_details(amazon_queries, num_products):
     async with aiohttp.ClientSession() as session:
         # Create asynchronous tasks for each Amazon query
@@ -141,10 +140,6 @@ async def get_amazon_details(amazon_queries, num_products):
                     })
         
         return all_amazon_data
-
-
-
-
 
 
 async def fetch_dawa_data(session, query, num_products):
@@ -203,13 +198,20 @@ def process_dawa_response(data, query):
             original_price = hit.get('price', {}).get('SAR', {}).get('default_original_formated', None)
             if original_price:
                 original_price = float(original_price.replace(' SAR', '').replace(',', '').strip())
-                
+
+            # Extract offer text
+            offer_text_notag = hit.get('offer_text_notag', None)
+            
+            # Calculate discount
+            discount = parse_discount_from_text(offer_text_notag) if offer_text_notag else 0
+
             dawa_data.append({
                 'name': hit.get('name', None),
                 'price': hit.get('price', {}).get('SAR', {}).get('default', None),
                 'price_original': original_price,
                 'offer_text_notag': hit.get('offer_text_notag', None),
                 'sku': hit.get('sku', None),
+                'discount': discount,
                 'key': query  # Include the query as the key
             })
     return pd.DataFrame(dawa_data)
@@ -229,12 +231,11 @@ async def get_dawa_details(dawa_queries, num_products):
                     'price_original': entry.price_original,
                     'offer_text_notag': entry.offer_text_notag,
                     'sku': entry.sku,
-                    'key': entry.key  # Add 'key' in the final result
+                    'key': entry.key,  # Add 'key' in the final result
+                    'discount': entry.discount,
                 })
 
         return result
-
-
 
 
 async def fetch_nahdi_data(session, query, num_products):
@@ -297,19 +298,26 @@ def process_nahdi_response(data, query):
     for result in data.get('results', []):
         hits = result.get('hits', [])
         for hit in hits:  # Loop through all hits
-            # Extract necessary data with default values if not found
+            # Extract the necessary fields with default values if not found
             original_price = hit.get('price', {}).get('SAR', {}).get('default_original_formated', None)
-            # Remove " SAR" and commas, then convert to float
+            price = hit.get('price', {}).get('SAR', {}).get('default', None)
+
+            # Remove " SAR" and commas, then convert to float if not None
             if original_price:
                 original_price = float(original_price.replace(' SAR', '').replace(',', '').strip())
-                
+             # Apply the coalesce logic to determine the effective price
+            if original_price is None:
+                discount = 0
+            else:
+                discount = (100 - (price/original_price)* 100  )                
             nahdi_data.append({
                 'name': hit.get('name', None),
                 'price': hit.get('price', {}).get('SAR', {}).get('default', None),
                 'price_original': original_price,
                 'ordered_qty': hit.get('ordered_qty', None),
                 'sku': hit.get('sku', None),
-                'key': query  # Include the query as the key
+                'key': query,  # Include the query as the key
+                'discount': discount,
             })
     return pd.DataFrame(nahdi_data)  # Return DataFrame directly
 
@@ -328,6 +336,125 @@ async def get_nahdi_details(nahdi_queries, num_products):
                     'price': entry.price,
                     'price_original': entry.price_original,
                     'ordered_qty': entry.ordered_qty,
+                    'sku': entry.sku,
+                    'key': entry.key,  # Add 'key' in the final result
+                    'discount': entry.discount,
+            })
+
+        return result
+
+
+
+# Function to fetch data from Noon.sa
+async def fetch_noon_data(session, query, num_products):
+    # Replace spaces in the query with URL encoding
+    query_updated = query.replace(" ", "%20")
+    
+    # Construct the URL with query parameters
+    url = (
+        f"https://www.noon.com/saudi-en/search/"
+        f"?q={query_updated}&isCarouselView=false&limit={num_products}&sort%5Bby%5D=popularity&sort%5Bdir%5D=desc"
+    )
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Cookie': 'visitor_id=bc156d3c-96ce-4a6b-a3a5-4aa64c31c134; _gcl_au=1.1.131444729.1727515428; _ga=GA1.2.1083881771.1727515444; _scid=reVr5GO4avCloaxPAnOKA7j6J26n53U4; _tt_enable_cookie=1; nloc=en-sa; _ScCbts=%5B%22260%3Bchrome.2%3A2%3A5%22%5D; _sctr=1%7C1731794400000; _ttp=_MLtL_L6O-TWV85lmATLBMEw8sJ.tt.1; review_lang=xx; th_capi_ph=66d791a4b43e9b0607f115746aa8b70d93b5eda23775d84ef19b2bc80f7caa53; ZLD887450000000002180avuid=7a9c821e-7e27-451a-ae45-114ebfff68bd; _clck=8x43rh%7C2%7Cfr2%7C0%7C1732; AKA_A2=A; bm_mi=FCA04E41935E3118143BBD4A9C723F06~YAAQpTwSAhNoqSaTAQAATL3YTRnQ5U+/iVa781N+o2E6hiAhZW8tKeswbhn3+6MK4FZ+KATU1nbDAIYjagq3v8WtZA8PSCBmZyFxfe5HpZNzi83lZM5NoEgsZrfxcXekK0WfWZ2IrvHJ1bW/AFOARpH5rvydBZXAXZqELPcMclQutQjtafvOuN/lTmkiif71eOUx3Vs385U9UHJBzrjfpACqW/y0eXC6gKnJBN2uOVOyrYVMGJDi0cnbErR0pd/C4uoFF47753gn/qxRMT6Z17XViG9+hiRML/CWR8JNrMj2gbYmp10/fN3vDyJZ8SC6m4TSr2WUyF/p~1; _etc=sQkaOpSXI805sGeo; ak_bmsc=6E1F9453FD6AC43CA734CB867C8ABB2D~000000000000000000000000000000~YAAQpTwSAt5rqSaTAQAATADZTRnRJpqROkEESfsqSzVmOi4bF84ftNkPsw4yH/lkpE5e6nkxKEMZlp7/AloofbrduXJnbarnAOVM1zVcQGK5owrXJQvv13DuQMA+rIll1E+TbrKRn2DpGFtVXIa11m6R+u3K/m6lStVVF678PfbZ6X9qLGUT+0CY8VX3gv+AMt4tfgm6t5TzDu+f8094z3v4Kvx6rDxwHIYBHglB7N9uH6K0dw9CZj+2JSPINapl30quMYsuIV6Y0eevwFjyNF57yQkHT/97lmXoKPIYtfD0WsePwlySAnHuQJZBcEl7dasHKokvfF0xgOhRgm6qAoiGXz4lRA1Swd5UdR86BLHeRtEXUOVam1rXJtQjVYjhRxaJvF9c4/SlUArTMNEhA9Vlr2K5zSISoLQCMSh+lnVsPlaKsKsbkHbsFkVPCZf55hOGWq8AJDuckP+u9cPpkoHX7Y/RlNKz4KN6gvE=; ZLDsiq3b3ce696144e42ab351af48092266ce3dda2b3c7b2ad6e09ba5d18504de03180tabowner=undefined; x-whoami-headers=eyJ4LWxhdCI6IjI0NzMxMTM4MiIsIngtbG5nIjoiNDY2NzAwODE0IiwieC1hYnkiOiJ7XCJwb192MlwiOntcImVuYWJsZWRcIjoxfSxcInNwbF92MlwiOntcImVuYWJsZWRcIjoxfSxcInNwbF92M1wiOntcImVuYWJsZWRcIjoxfSxcInBkcF9ib3NcIjp7XCJlbmFibGVkXCI6MX0sXCJtcF9pY29uX3YyXCI6e1wiZW5hYmxlZFwiOjF9LFwiZ2xvYmFsX2V4cFwiOntcImVuYWJsZWRcIjoxfSxcInBkcF9mbHlvdXRcIjp7XCJmbHlvdXRfdmFsdWVcIjowfSxcInNwbF9lbnRyeXBvaW50X3YyXCI6e1wiZW5hYmxlZFwiOjF9LFwid2ViX3BscF9wZHBfcmV2YW1wXCI6e1wiZW5hYmxlZFwiOjF9LFwicGRwX3NjcmVlbnNob3Rfc2hhcmVfc2hlZXRcIjp7XCJlbmFibGVkXCI6MX19IiwieC1lY29tLXpvbmVjb2RlIjoiU0EtUlVILVMxNyIsIngtYWItdGVzdCI6WzcxMSw3MjEsODMwLDg1MSw5MDEsOTExLDkyMSw5NDEsOTUxLDk4MSwxMDIxLDEwMzEsMTA3MCwxMDkxLDExMDFdLCJ4LXJvY2tldC16b25lY29kZSI6IlcwMDA4MzQ5NkEiLCJ4LXJvY2tldC1lbmFibGVkIjp0cnVlLCJ4LWJvcmRlci1lbmFibGVkIjp0cnVlfQ==; noonengr-_zldp=dbw5UOFoeCxTgBnt0REV5btd8c%252F9rlL%252F68HewXjBFT2AMAvt7hW%252BtnXnGuTlF%252FYYmKwM1K1ctjo%253D; ZLDsiq663f5c2580454f7ed6b7bbe12e575c5570eb9b21832ce32b902ca6cbca6ffc2bavuid=7a9c821e-7e27-451a-ae45-114ebfff68bd; nguestv2=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJraWQiOiI0MDU2OTczNjU2NDk0ZTRmODBjNWE2Y2FlNDZlZDI5OCIsImlhdCI6MTczMjE3OTMxNywiZXhwIjoxNzMyMTc5NjE3fQ.xOUtDJnjH0_Wigy_uVpQiGLFDea2BsvvvU7V3UUkrqc; __rtbh.lid=%7B%22eventType%22%3A%22lid%22%2C%22id%22%3A%22j0CBwPXiOd9ZcoSgCypn%22%2C%22expiryDate%22%3A%222025-11-21T08%3A55%3A20.199Z%22%7D; _scid_r=sWVr5GO4avCloaxPAnOKA7j6J26n53U4zWuXiQ; _uetsid=19c63c70a71711ef9aef1116598f49c2; _uetvid=692459107d7b11ef8c8f67cbdc118fe8; bm_sv=EDB046D9F1AAFDCD4FBB281D8017F132~YAAQpTwSAj+sqiaTAQAA7/jvTRk1u5S1rCTXUQnwXU+8xERnnwI2BuxAQX/3oyMYF3l9+auo8bnilJ05fsd4MXzs8oG6EJDnyiSgD7kAQKahdhIbokXJZnKrO9QgG8CyBQYaTFnep0vJyp9CDqkCYt4sCjTav2HCAlq167vZAeUSlxcNrZlXJ3oQkkie0OaUdyO2PFslngELBUdDIuHEru/10cMqxDHvyCz/uM6lvl0T6rb0hF9tIf5Y2lLCUm4=~1; __rtbh.uid=%7B%22eventType%22%3A%22uid%22%2C%22id%22%3Anull%2C%22expiryDate%22%3A%222025-11-21T08%3A56%3A38.498Z%22%7D; _clsk=apwh48%7C1732179400015%7C8%7C0%7Ck.clarity.ms%2Fcollect; RT="z=1&dm=noon.com&si=7c7fb5a4-0b13-4006-9a69-a7e33ff6dd20&ss=m3r1z8c4&sl=1&tt=w2p&rl=1&nu=d41d8cd98f00b204e9800998ecf8427e&cl=wnbi&ul=x4wu"',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        }
+
+    print(f"Fetching Noon data for query '{query}' with num_products={num_products}")
+    try:
+        async with session.get(url, headers=headers) as response:
+            # print(f"Response status for '{query}': {response.status}")
+            response_data = await response.text()
+            return response_data, query
+    except Exception as e:
+        print(f"Error fetching data for query '{query}': {e}")
+        return None
+
+# Function to process the Noon response
+def process_noon_response(data, query):
+    # print("Processing HTML content...")
+    soup = BeautifulSoup(data, 'html.parser')
+    script_tag = soup.find('script', id="__NEXT_DATA__", type="application/json")
+    
+    if not script_tag:
+        print("Error: __NEXT_DATA__ script not found in the HTML.")
+        return []
+
+    try:
+        data = json.loads(script_tag.string)
+        # print("Successfully parsed JSON data.")
+    except json.JSONDecodeError:
+        print("Error: Failed to parse JSON data.")
+        return []
+
+    # # Print the entire JSON structure for debugging
+    # with open("debug_noon_data.json", "w", encoding="utf-8") as f:
+    #     json.dump(data, f, indent=4)
+    # print("JSON structure saved to 'debug_noon_data.json' for inspection.")
+
+    # Extract hits and facets
+    noon_data = []
+    hits = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('hits', [])
+
+    # print(f"Number of hits: {len(hits)}")
+
+    for hit in hits:
+        name = hit.get('name')
+        price = hit.get('price')
+        original_price = hit.get('sale_price')
+
+        # Apply the coalesce logic to determine the effective price
+        if original_price is None:
+            effective_price = price
+            discount = 0
+        else:
+            effective_price = original_price
+            discount = (100 - (original_price/price)* 100  ) 
+
+
+
+        noon_data.append({
+            'name': name,
+            'price': price,
+            'sku': hit.get('sku', None),
+            'original_price': original_price,
+            'calculated_price': round(effective_price, 2),  # Final effective price
+            'discount': round(discount, 2),  # Discount percentage
+            'key': query  # Include the query as the key
+
+        })
+
+    # print(f"Processed {len(processed_data)} items.")
+    return pd.DataFrame(noon_data)  # Return DataFrame directly
+
+# Asynchronous task to fetch and return Noon data for multiple queries
+async def get_noon_details(noon_queries , num_products):
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_noon_data(session, query, num_products) for query in noon_queries]
+        responses = await asyncio.gather(*tasks)
+        all_noon_data = [process_noon_response(response, query) for (response, query) in responses]
+
+        result = []
+        for data in all_noon_data:
+            for entry in data.itertuples(index=False):
+                result.append({
+                    'name': entry.name,
+                    'price': entry.calculated_price,
+                    'price_original': entry.original_price,
+                    'discount': entry.discount,
                     'sku': entry.sku,
                     'key': entry.key  # Add 'key' in the final result
                 })

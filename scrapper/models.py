@@ -1,7 +1,19 @@
 from django.db import models
 from client_profile.models import Product, PromoPlan
 from django.utils.functional import cached_property
+# from .utils import parse_discount_from_text
 
+# def calculate_price_discount(price, original_price):
+#     if price is None:
+#         price = 0
+#     if original_price is not None and original_price != 0:
+#         effective_price = original_price
+#         discount = (1 - price / original_price) * 100
+#     else:
+#         effective_price = price
+#         discount = 0
+
+#     return round(effective_price, 2), round(discount, 2)
 
 class ScrapedData(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -24,7 +36,7 @@ class ScrapedData(models.Model):
     dawa_original_price = models.FloatField(blank=True, null=True)
     dawa_is_in_stock_msi = models.IntegerField(blank=True, null=True)
     dawa_offer_text_notag = models.CharField(max_length=200, blank=True, null=True)
-
+    dawa_discount = models.FloatField(blank=True, null=True)
 
     # Nahdi attributes
     nahdi_price = models.FloatField(blank=True, null=True)
@@ -34,7 +46,16 @@ class ScrapedData(models.Model):
     nahdi_ordered_qty = models.FloatField(blank=True, null=True)
     nahdi_sold_out = models.CharField(max_length=50, blank=True, null=True)
     nahdi_limited_stock = models.CharField(max_length=50, blank=True, null=True)
-    
+    nahdi_discount = models.FloatField(blank=True, null=True)
+
+    # Noon_SA attributes
+    noon_sa_price = models.FloatField(blank=True, null=True)
+    noon_sa_title = models.CharField(max_length=200, blank=True, null=True)
+    noon_sa_availability_info = models.IntegerField(blank=True, null=True)
+    noon_sa_original_price = models.FloatField(blank=True, null=True)
+    noon_sa_discount = models.FloatField(blank=True, null=True)
+    noon_sa_sold_by = models.CharField(max_length=30, blank=True, null=True)
+
     @cached_property
     def promo_flag(self):
         return PromoPlan.objects.filter(
@@ -58,20 +79,8 @@ class ScrapedData(models.Model):
         discount = self.discount_percentage / 100
         return rsp_vat - (discount * rsp_vat)
 
-    @cached_property
-    def amazon_ratio(self):
-        if self.final_price is None or self.amazon_price is None:
-            return None
-        ratio = self.amazon_price / self.final_price
-        return ratio
 
-    @cached_property
-    def dawa_ratio(self):
-        if self.final_price is None or self.dawa_price is None:
-            return None
-        ratio = self.dawa_price / self.final_price
-        return ratio
-    
+
     @cached_property
     def nahdi_ratio(self):
         if self.final_price is None or self.nahdi_price is None:
@@ -79,17 +88,40 @@ class ScrapedData(models.Model):
         ratio = self.nahdi_price / self.final_price
         return ratio
 
-    @cached_property
-    def nahdi_discount(self):
-        if self.nahdi_original_price and self.nahdi_price:
-            return (self.nahdi_price / self.nahdi_original_price)*100
-        return 0
+    # @cached_property
+    # def nahdi_discount(self):
+    #     if self.nahdi_original_price and self.nahdi_price:
+    #         return (100-(self.nahdi_price / self.nahdi_original_price)*100)
+    #     return 0
 
     @cached_property
-    def dawa_discount(self):
-        if self.dawa_original_price and self.dawa_price:
-            return (self.dawa_price / self.dawa_original_price)*100
-        return 0
+    def nahdi_compliance_score(self):
+        if self.final_price is None or self.nahdi_price is None:
+            return False
+        
+        abs_diff = abs(self.final_price-self.nahdi_price)
+        complience_score = (1-(abs_diff/(0.5*self.final_price)))
+
+        return complience_score
+
+    # @cached_property
+    # def nahdi_compliance_flag(self):
+    #     if self.final_price is None or self.nahdi_price is None:
+    #         return False
+        
+    #     lower_limit = self.final_price * 0.9
+    #     upper_limit = self.final_price * 1.1
+
+    #     return lower_limit <= self.nahdi_price <= upper_limit
+
+
+
+    @cached_property
+    def amazon_ratio(self):
+        if self.final_price is None or self.amazon_price is None:
+            return None
+        ratio = self.amazon_price / self.final_price
+        return ratio
 
     @cached_property
     def amazon_compliance_score(self):
@@ -100,6 +132,26 @@ class ScrapedData(models.Model):
         complience_score = (1-(abs_diff/(0.5*self.final_price)))
 
         return complience_score
+
+    # @cached_property
+    # def amazon_compliance_flag(self):
+    #     if self.final_price is None or self.amazon_price is None:
+    #         return False
+        
+    #     lower_limit = self.final_price * 0.9
+    #     upper_limit = self.final_price * 1.1
+
+    #     return lower_limit <= self.amazon_price <= upper_limit
+    
+
+
+    # @cached_property
+    # def dawa_discount(self):
+    #     # Additional discount based on offer text
+    #     offer_text_discount = parse_discount_from_text(self.dawa_offer_text_notag) if self.dawa_offer_text_notag else 0
+
+    #     # Sum both discounts for the final value
+    #     return offer_text_discount
 
     @cached_property
     def dawa_compliance_score(self):
@@ -112,48 +164,76 @@ class ScrapedData(models.Model):
         return complience_score
     
     @cached_property
-    def nahdi_compliance_score(self):
-        if self.final_price is None or self.nahdi_price is None:
-            return False
+    def dawa_ratio(self):
+        if self.final_price is None or self.dawa_price is None:
+            return None
+        ratio = self.dawa_price / self.final_price
+        return ratio
+    
+    # @cached_property
+    # def dawa_compliance_flag(self):
+    #     if self.final_price is None or self.dawa_price is None:
+    #         return False
         
-        abs_diff = abs(self.final_price-self.nahdi_price)
-        complience_score = (1-(abs_diff/(0.5*self.final_price)))
+    #     lower_limit = self.final_price * 0.9
+    #     upper_limit = self.final_price * 1.1
 
-        return complience_score
+    #     return lower_limit <= self.dawa_price <= upper_limit
 
-    @cached_property
-    def amazon_compliance_flag(self):
-        if self.final_price is None or self.amazon_price is None:
+
+
+
+    # @cached_property
+    # def noon_sa_price_discount(self):
+    #     return calculate_price_discount(self.noon_sa_price, self.noon_sa_original_price)
+
+
+
+
+    def calculate_compliance_flag(self, price):
+        """
+        Generalized method to calculate compliance flag for a given price.
+        """
+        if self.final_price is None or price is None:
             return False
-        
+
         lower_limit = self.final_price * 0.9
         upper_limit = self.final_price * 1.1
 
-        return lower_limit <= self.amazon_price <= upper_limit
-    
+        return lower_limit <= price <= upper_limit
+
     @cached_property
     def dawa_compliance_flag(self):
-        if self.final_price is None or self.dawa_price is None:
-            return False
-        
-        lower_limit = self.final_price * 0.9
-        upper_limit = self.final_price * 1.1
-
-        return lower_limit <= self.dawa_price <= upper_limit
+        """
+        Specific compliance flag for Dawa price.
+        """
+        return self.calculate_compliance_flag(self.dawa_price)
 
     @cached_property
     def nahdi_compliance_flag(self):
-        if self.final_price is None or self.nahdi_price is None:
-            return False
-        
-        lower_limit = self.final_price * 0.9
-        upper_limit = self.final_price * 1.1
+        """
+        Specific compliance flag for Nahdi price.
+        """
+        return self.calculate_compliance_flag(self.nahdi_price)
 
-        return lower_limit <= self.nahdi_price <= upper_limit
+    @cached_property
+    def amazon_compliance_flag(self):
+        """
+        Specific compliance flag for Amazon price.
+        """
+        return self.calculate_compliance_flag(self.amazon_price)
+
+    @cached_property
+    def noon_sa_compliance_flag(self):
+        """
+        Specific compliance flag for Noon price.
+        """
+        return self.calculate_compliance_flag(self.noon_sa_price)
+
 
     @cached_property
     def price_deviation_score(self):
-        store_prices = [self.amazon_price, self.dawa_price, self.nahdi_price]
+        store_prices = [self.amazon_price, self.dawa_price, self.nahdi_price, self.noon_sa_price]
         store_prices = [price for price in store_prices if price is not None]
         
         if not store_prices or self.final_price == 0:
@@ -171,8 +251,11 @@ class ScrapedData(models.Model):
     
     @cached_property
     def pcs(self):
-        total_stores = sum(1 for price in [self.amazon_price, self.dawa_price, self.nahdi_price] if price is not None)
-        compliant_stores = sum(1 for flag in [self.amazon_compliance_flag, self.dawa_compliance_flag, self.nahdi_compliance_flag] if flag)
+        total_stores = sum(1 for price in [self.amazon_price, 
+                                           self.dawa_price, 
+                                           self.nahdi_price,
+                                           self.noon_sa_price] if price is not None)
+        compliant_stores = sum(1 for flag in [self.amazon_compliance_flag, self.dawa_compliance_flag, self.nahdi_compliance_flag, self.noon_sa_compliance_flag] if flag)
         
         if total_stores == 0:
             return 0
@@ -225,7 +308,7 @@ class ScrapedData(models.Model):
             f"Dawa Original Price: {self.dawa_original_price if self.dawa_original_price is not None else 'N/A'}",
             f"Dawa In Stock MSI: {self.dawa_is_in_stock_msi if self.dawa_is_in_stock_msi is not None else 'N/A'}",
             f"Dawa Offer Text: {self.dawa_offer_text_notag if self.dawa_offer_text_notag else 'N/A'}",
-            f"Dawa Discount: {self.dawa_discount if self.dawa_discount is not None else 'N/A'}",
+            f"Dawa Discount: {self.dawa_discount if self.dawa_discount else 'N/A'}",
 
             f"Nahdi Price: {self.nahdi_price if self.nahdi_price is not None else 'N/A'}",
             f"Nahdi Title: {self.nahdi_title if self.nahdi_title else 'N/A'}",
@@ -234,8 +317,14 @@ class ScrapedData(models.Model):
             f"Nahdi Ordered Quantity: {self.nahdi_ordered_qty if self.nahdi_ordered_qty is not None else 'N/A'}",
             f"Nahdi Sold Out: {self.nahdi_sold_out if self.nahdi_sold_out else 'N/A'}",
             f"Nahdi Limited Stock: {self.nahdi_limited_stock if self.nahdi_limited_stock else 'N/A'}",
-            f"Nahdi Discount: {self.nahdi_discount if self.nahdi_discount is not None else 'N/A'}",
+            f"Nahdi Discount: {self.nahdi_discount if self.nahdi_discount else 'N/A'}",
 
+            f"Noon_sa Title: {self.noon_sa_title if self.noon_sa_title else 'N/A'}",
+            f"Noon_sa Availability Info: {self.noon_sa_availability_info if self.noon_sa_availability_info is not None else 'N/A'}",
+            f"Noon_sa Original Price: {self.noon_sa_original_price if self.noon_sa_original_price is not None else 'N/A'}",
+            f"Noon_sa Price: {self.noon_sa_price if self.noon_sa_price else 'N/A'}",
+            f"Noon_sa Sold By: {self.noon_sa_sold_by if self.noon_sa_sold_by else 'N/A'}",
+            f"Noon_sa Discount: {self.noon_sa_discount if self.noon_sa_discount else 'N/A'}",
 
             f"Promo Flag: {'Yes' if self.promo_flag else 'No'}",
             f"Discount Percentage: {self.discount_percentage:.2f}%",
@@ -244,6 +333,7 @@ class ScrapedData(models.Model):
             f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}",
             f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}",
             f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}",
+            f"Noon Compliance Flag: {'Yes' if self.noon_sa_compliance_flag else 'No'}",
             f"Amazon Compliance Ratio: {self.amazon_ratio:.2f}" if self.amazon_ratio is not None else "Amazon Compliance Ratio: N/A",
             f"Dawa Compliance Ratio: {self.dawa_ratio:.2f}" if self.dawa_ratio is not None else "Dawa Compliance Ratio: N/A",
             f"Nahdi Compliance Ratio: {self.nahdi_ratio:.2f}" if self.nahdi_ratio is not None else "Nahdi Compliance Ratio: N/A",
@@ -271,6 +361,7 @@ class ScrapedBulkData(models.Model):
     amazon_title = models.CharField(max_length=200, blank=True, null=True)
     amazon_sku = models.CharField(max_length=200, blank=True, null=True)
     amazon_original_price = models.FloatField(blank=True, null=True)
+    amazon_discount = models.FloatField(blank=True, null=True)
 
     # Dawa attributes
     dawa_price = models.FloatField(blank=True, null=True)
@@ -278,6 +369,7 @@ class ScrapedBulkData(models.Model):
     dawa_sku = models.CharField(max_length=200, blank=True, null=True)
     dawa_original_price = models.FloatField(blank=True, null=True)
     dawa_offer_text_notag = models.CharField(max_length=200, blank=True, null=True)
+    dawa_discount = models.FloatField(blank=True, null=True)
 
     # Nahdi attributes
     nahdi_price = models.FloatField(blank=True, null=True)
@@ -285,25 +377,43 @@ class ScrapedBulkData(models.Model):
     nahdi_sku = models.CharField(max_length=200, blank=True, null=True)
     nahdi_original_price = models.FloatField(blank=True, null=True)
     nahdi_ordered_qty = models.FloatField(blank=True, null=True)
+    nahdi_discount = models.FloatField(blank=True, null=True)
+
+    # Noon_SA attributes
+    noon_sa_price = models.FloatField(blank=True, null=True)
+    noon_sa_title = models.CharField(max_length=200, blank=True, null=True)
+    noon_sa_sku = models.CharField(max_length=200, blank=True, null=True)
+    noon_sa_original_price = models.FloatField(blank=True, null=True)
+    noon_sa_discount = models.FloatField(blank=True, null=True)
+
+    # @cached_property
+    # def nahdi_discount(self):
+    #     if self.nahdi_original_price and self.nahdi_price:
+    #         return (self.nahdi_price / self.nahdi_original_price)*100
+    #     return 0
+
+    # Old definition
+    # @cached_property
+    # def dawa_discount(self):
+    #     if self.dawa_original_price and self.dawa_price:
+    #         return (self.dawa_price / self.dawa_original_price)*100
+    #     return 0
+
+    # New definition
+    # @cached_property
+    # def dawa_discount(self):
+    #     # Additional discount based on offer text
+    #     offer_text_discount = parse_discount_from_text(self.dawa_offer_text_notag) if self.dawa_offer_text_notag else 0
+
+    #     # Sum both discounts for the final value
+    #     return offer_text_discount
 
 
-    @cached_property
-    def nahdi_discount(self):
-        if self.nahdi_original_price and self.nahdi_price:
-            return (self.nahdi_price / self.nahdi_original_price)*100
-        return 0
-
-    @cached_property
-    def dawa_discount(self):
-        if self.dawa_original_price and self.dawa_price:
-            return (self.dawa_price / self.dawa_original_price)*100
-        return 0
-
-    @cached_property
-    def amazon_discount(self):
-        if self.amazon_original_price and self.amazon_price:
-            return (self.amazon_price / self.amazon_original_price)*100
-        return 0
+    # @cached_property
+    # def amazon_discount(self):
+    #     if self.amazon_original_price and self.amazon_price:
+    #         return (self.amazon_price / self.amazon_original_price)*100
+    #     return 0
 
 
         
@@ -331,6 +441,13 @@ class ScrapedBulkData(models.Model):
             f"Nahdi Original Price: {self.nahdi_original_price if self.nahdi_original_price is not None else 'N/A'}",
             f"Nahdi Ordered Quantity: {self.nahdi_ordered_qty if self.nahdi_ordered_qty is not None else 'N/A'}",
             f"Nahdi Discount: {self.nahdi_discount if self.nahdi_discount is not None else 'N/A'}",
+
+            f"Noon_sa Title: {self.noon_sa_title if self.noon_sa_title else 'N/A'}",
+            f"Noon_sa Original Price: {self.noon_sa_original_price if self.noon_sa_original_price is not None else 'N/A'}",
+            f"Noon_sa SKU: {self.noon_sa_sku if self.noon_sa_sku else 'N/A'}",
+            f"Noon_sa Price: {self.noon_sa_price if self.noon_sa_price else 'N/A'}",
+            f"Noon_sa Discount: {self.noon_sa_discount if self.noon_sa_discount else 'N/A'}",
+
         ]
         
         # Join details with commas for readability and return a single formatted string

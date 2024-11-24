@@ -1,14 +1,14 @@
 from django.contrib import admin
-from .models import Profile, Product, Photo, Account, Account_id, ProductAccountLink, ProductAccountLinkId, Product, PromoPlan, Brand, Category, Subcategory #Keyword
+from .models import Profile, Product, Photo, Account_id, ProductAccountLinkId, Product, PromoPlan, Brand, Category, Subcategory #Keyword, ProductAccountLink, Account
 
 
 class PhotoInline(admin.TabularInline):
     model = Photo
     extra = 1
 
-class ProductAccountLinkInline(admin.TabularInline):
-    model = ProductAccountLink
-    extra = 1
+# class ProductAccountLinkInline(admin.TabularInline):
+#     model = ProductAccountLink
+#     extra = 1
 
 class ProductAccountLinkIdInline(admin.TabularInline):
     model = ProductAccountLinkId
@@ -23,7 +23,7 @@ class ProfileAdmin(admin.ModelAdmin):
     inlines = [ProductInline]
 
 class ProductAdmin(admin.ModelAdmin):
-    inlines = [PhotoInline, ProductAccountLinkInline, ProductAccountLinkIdInline] #, KeywordInline
+    inlines = [PhotoInline, ProductAccountLinkIdInline] #, KeywordInline, ProductAccountLinkInline
     list_display = ('TITLE', 'description', 'RSP', 'RSP_VAT', 'profile', 'category', 'subcategory', 'brand')  # Add new fields
     list_filter = ('category', 'subcategory', 'brand')  # Add new filters
     search_fields = ('TITLE', 'description', 'category__name', 'subcategory__name', 'brand__name')  # Add new fields
@@ -52,9 +52,9 @@ class PromoPlanAdmin(admin.ModelAdmin):
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Photo)
-admin.site.register(Account)
+# admin.site.register(Account)
 admin.site.register(Account_id)
-admin.site.register(ProductAccountLink)
+# admin.site.register(ProductAccountLink)
 admin.site.register(ProductAccountLinkId)
 # admin.site.register(Keyword)
 admin.site.register(PromoPlan, PromoPlanAdmin)

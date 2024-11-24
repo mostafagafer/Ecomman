@@ -43,10 +43,10 @@
               <div class="row">
                 <div class="col-8">
                   <div class="numbers">
-                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Avability</p>
+                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Availability</p>
                     <h5 class="font-weight-bolder mb-0">
-                      2,300
-                      <span class="text-success text-sm font-weight-bolder">+3%</span>
+                      **
+                      <span class="text-success text-sm font-weight-bolder">--%</span>
                     </h5>
                   </div>
                 </div>
@@ -67,8 +67,8 @@
                   <div class="numbers">
                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Assortment</p>
                     <h5 class="font-weight-bolder mb-0">
-                      +3,462
-                      <span class="text-danger text-sm font-weight-bolder">-2%</span>
+                      **
+                      <span class="text-danger text-sm font-weight-bolder">--%</span>
                     </h5>
                   </div>
                 </div>
@@ -89,8 +89,8 @@
                   <div class="numbers">
                     <p class="text-sm mb-0 text-capitalize font-weight-bold">PPD</p>
                     <h5 class="font-weight-bolder mb-0">
-                      $103,430
-                      <span class="text-success text-sm font-weight-bolder">+5%</span>
+                      **
+                      <span class="text-success text-sm font-weight-bolder">--%</span>
                     </h5>
                   </div>
                 </div>
@@ -114,8 +114,8 @@
             <div class="col-lg-6">
               <div class="d-flex flex-column h-100">
                 <h5 class="font-weight-bolder">EcomMan Score</h5>
-                <p class="mb-5">With EcomMan Score. with the power of AI, you can manage and 
-                  moniter the oveerall pefrormance of your products with one click. 
+                <p class="mb-5">With EcomMan Score. Our powerful AI tool, you can manage and forcast
+                  moniter the overall pefrormance of your products with just one number. 
                 </p>
                 <a class="text-body text-sm font-weight-bold mb-0 icon-move-right mt-auto" href="javascript:;">
                   Read More
@@ -127,8 +127,18 @@
               <div class="bg-gradient border-radius-lg h-100">
                 <div class="position-relative d-flex align-items-center justify-content-center h-100 border border-4 border-danger">
                   <div class=" card numbers">
-                      <h1>69.24 </h1>  
-                      <span class="text-danger text-sm font-weight-bolder">-13.56</span>
+                    <h1>{{ summary_data.latest_opps|floatformat:"2" }}</h1>  
+
+                    {% if summary_data.opps_difference == 0 %}
+                    <span class="text-secondary text-sm font-weight-bolder">{{ summary_data.opps_difference|floatformat:"2"  }}</span>
+                    {% elif summary_data.opps_difference > 0 %}
+                    <span class="text-success text-sm font-weight-bolder">{{ summary_data.opps_difference|floatformat:"2"  }}</span>
+                    {% else %}
+                    <span class="text-danger text-sm font-weight-bolder">{{ summary_data.opps_difference|floatformat:"2"  }}</span>
+                  {% endif %}
+
+                      <!-- <h1>69.24 </h1>  
+                      <span class="text-danger text-sm font-weight-bolder">-13.56</span> -->
                   </div>
                 </div>
               </div>
@@ -187,9 +197,6 @@
       </p>
       <div class="collapse" id="collapseExample">
         {% for pinned_table in pinned_tables %}
-        <div class="card card-body">
-
-
 
           {% if pinned_table.table_name == 'PerformanceData' %}
             <h3>{{ pinned_table.table_name }}</h3>
@@ -280,9 +287,10 @@
           {% endif %}
 
           {% if pinned_table.table_name == 'CurrentPriceStatus' %}
+
           <div class="row">
             <div class="row mt-4">
-              <h1>Current Price Status</h1>
+              <h1>Current Price Status </h1>
             </div>
         
             <div class="col-12">
@@ -291,12 +299,21 @@
                   <div class="row">
                     <div class="col-lg-6 col-7">
                       <p class="text-sm mb-0">
-                        The table's last update was on <span>{{ latest_scraped_date|date:"F j, Y, g:i a" }}</span>
-                    </p>
+                        The table's last update was on <span style="font-weight: bold;" >{{ latest_scraped_date|date:"F j, Y, g:i a" }}</span>
+                    </div>
+                  </div>
+        
+                  <div class="row mt-4">
+                    <div class="container-fluid">
+                      <form action="{% url 'dashboard:trigger_scrape_for_user_products' %}" method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                          <button class="btn btn-primary" type="submit">Update Price Now</button>
+                        </div>
+                      </form>
                     </div>
         
                   </div>
-                </div>
                 <div class="card-body px-0 pb-2">
                   <div class="table-responsive">
                     
@@ -305,7 +322,7 @@
                         <tr>
                           <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Product</th>
                           <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">RSV|RSV+VAT</th>
-                          <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">My Price</th>
+                          <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Reference Price</th>
                           <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">On Promo</th>
                           
                           {% for column in columns %}
@@ -314,17 +331,8 @@
                           {% endif %}
                         {% endfor %}
                                 
-                          {% if show_amazon_sold_by %}
-                              <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">AMZ Sold By</th>
-                          {% endif %}
-        
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Update date</th>
-        
-        
-        
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">OPPS</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Details</th>
-                        </tr>
+                        <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">PDS</th> -->
+                      </tr>
                       </thead>
                         <tbody>
                           {% for data in max_scraped_data  %}
@@ -360,67 +368,51 @@
                               </td>
         
                               {% for column in columns %}
-                                {% if "_price" in column.name %}
-                                  <td class="align-middle text-center text-sm">
-                                    {# Get the corresponding compliance flag dynamically using the custom replace filter #}
+                              {% if "_price" in column.name %}
+                                <td class="align-middle text-center text-sm">
+                                  <div class="d-flex align-items-center justify-content-center">
                                     {% with compliance_flag=column.name|replace:"price,compliance_flag" %}
                                       {% if data|get_item2:compliance_flag %}
-                                        <span >{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
+                                        <span>{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
                                       {% else %}
                                         <span class="badge bg-danger">{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
                                       {% endif %}
+                                      
+                                      {% if column.name == "amazon_price" and data.amazon_sold_by != "Amazon.sa" %}
+                                        <svg 
+                                          xmlns="http://www.w3.org/2000/svg" 
+                                          width="16" 
+                                          height="16" 
+                                          fill="red" 
+                                          class="bi bi-shop ms-2" 
+                                          viewBox="0 0 16 16"
+                                          data-bs-toggle="popover" 
+                                          data-bs-placement="right" 
+                                          data-bs-content="Sold by: {{ data.amazon_sold_by }}"
+                                          style="cursor: pointer;">
+                                          <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.37 2.37 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0M1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5M4 15h3v-5H4zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm3 0h-2v3h2z"/>
+                                        </svg>
+        
+                                      {% endif %}
+                                      
                                     {% endwith %}
-                                  </td>
-                                {% endif %}
-                              {% endfor %}
-        
-        
-                              {% if show_amazon_sold_by %}
-                              <td class="align-middle text-center text-sm">
-                                  {% if data.amazon_sold_by != "Amazon.sa" %}
-                                      <span style="color: red;">{{ data.amazon_sold_by }}</span>
-                                  {% else %}
-                                      {{ data.amazon_sold_by }}
-                                  {% endif %}
-                              </td>
+                                  </div>
+                                </td>
                               {% endif %}
-                    
-                              <td class="align-middle text-center text-sm">
-                                  <div >
-        
-                                  <div class="d-flex flex-column justify-content-center">
-                                  
-                                  {{ data.scraped_at|date:"F j, Y, g:i a" }}       
-                                  </div>
-                                  </div>
-                              </td> 
-                              <td class="align-middle text-center text-sm">
+                            {% endfor %}
+                                                                                                    
+                              <!-- <td class="align-middle text-center text-sm">
                                 <div class="progress-wrapper w-75 mx-auto">
                                   <div class="progress-info">
                                   <div class="progress-percentage">
-                                  <span class="text-xs font-weight-bold">{{data.opps|floatformat:"2"}}%</span>
+                                  <span class="text-xs font-weight-bold">{{data.price_deviation_score|floatformat:"2"}}%</span>
                                   </div>
                                   </div>
-                                  <!-- <div class="progress">
-                                  <div class="progress-bar bg-gradient-info w-20" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div> -->
+                                  <div class="progress">
+                                  <div class="progress-bar bg-gradient-info w-20" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                              </td>
+                              </td> -->
                               
-                              <td class="align-middle text-center text-sm">
-                                <div >
-        
-                                <div class="d-flex flex-column justify-content-center">
-        
-                                <button type="button" class="btn btn-secondary" 
-                                                      data-bs-toggle="popover" 
-                                                      data-bs-placement="left" 
-                                                      data-bs-content="Opps value: {{data.opps|floatformat:'2'}}">
-                                  Summary
-                                </button>
-                              
-                                </div>
-                                </div>
-                              </td> 
                           </tr>
                             {% endfor %}
         
@@ -431,13 +423,13 @@
                   </div>
                 </div>
         
-                <div class="col p-4">
-                  <!-- Rounded switch -->
+                <!-- Rounded switch -->
+                <!-- <div class="col p-4">
                   <label class="switch">
                     <input type="checkbox">
                     <span class="slider round"></span>
                   </label>
-                </div>
+                </div>   -->
                 <div class="col p-4">
                   <a href="{% url 'dashboard:toggle_pin_table' 'CurrentPriceStatus' %}" >
                       {% if is_table_pinned %}
@@ -446,93 +438,91 @@
                           Pin Table
                       {% endif %}
                   </a>
-                  </div>
+                </div>
               
               </div>
         
             </div>
           </div>
         
-          
-          {% endif %}        
-        </div>
-        {% endfor %}
-
-      </div>
-
-
         
-      
+        
+            
+        
+            
+        
+        
+            
+        
+        
+          </div>
+          {% endif %}        
+        {% endfor %}
+      </div>
     </div>
+          {% include "includes/footer.html" %}
 
-    
-
-<script>
-$(document).ready(function() {
-  // Initialize DataTable with export buttons
-  var table = $('#PerformanceData').DataTable({
-      dom: 'Bfrtip',
-      buttons: [
-          'copyHtml5',
-          'excelHtml5',
-          'csvHtml5',
-          'pdfHtml5'
-      ]
-  });
-
-  // Initialize Date Range Picker
-  $('#dateRange').daterangepicker({
-      opens: 'left',
-      autoUpdateInput: false,
-      locale: {
-          cancelLabel: 'Clear'
-      }
-  });
-
-  // Apply the date range filter
-  $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
-      $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
-      $.fn.dataTable.ext.search.push(
-          function(settings, data, dataIndex) {
-              var min = picker.startDate;
-              var max = picker.endDate;
-              var date = moment(data[4], 'MMMM D, YYYY, h:mm a'); // Assuming your date is in the 5th column (index 4)
-
-              if (min == null && max == null) {
-                  return true;
-              }
-              if (min == null && date <= max) {
-                  return true;
-              }
-              if (max == null && date >= min) {
-                  return true;
-              }
-              if (date <= max && date >= min) {
-                  return true;
-              }
-              return false;
-          }
-      );
-      table.draw();
-  });
-
-  $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
-      $(this).val('');
-      $.fn.dataTable.ext.search.pop();
-      table.draw();
-  });
-});
-</script>
-
-
-  
-    </div>
 
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 
 {% block scripts %}
-
+  <!-- <script>
+  $(document).ready(function() {
+    // Initialize DataTable with export buttons
+    var table = $('#PerformanceData').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            'copyHtml5',
+            'excelHtml5',
+            'csvHtml5',
+            'pdfHtml5'
+        ]
+    });
+  
+    // Initialize Date Range Picker
+    $('#dateRange').daterangepicker({
+        opens: 'left',
+        autoUpdateInput: false,
+        locale: {
+            cancelLabel: 'Clear'
+        }
+    });
+  
+    // Apply the date range filter
+    $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var min = picker.startDate;
+                var max = picker.endDate;
+                var date = moment(data[4], 'MMMM D, YYYY, h:mm a'); // Assuming your date is in the 5th column (index 4)
+  
+                if (min == null && max == null) {
+                    return true;
+                }
+                if (min == null && date <= max) {
+                    return true;
+                }
+                if (max == null && date >= min) {
+                    return true;
+                }
+                if (date <= max && date >= min) {
+                    return true;
+                }
+                return false;
+            }
+        );
+        table.draw();
+    });
+  
+    $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+        $.fn.dataTable.ext.search.pop();
+        table.draw();
+    });
+  });
+  </script>
   <script src="{% static 'js/plugins/chartjs.min.js' %}"></script>
   <script>
     var ctx = document.getElementById("chart-bars").getContext("2d");
@@ -703,6 +693,6 @@ $(document).ready(function() {
         },
       },
     });
-  </script>
+  </script> -->
 
 {% endblock scripts %}

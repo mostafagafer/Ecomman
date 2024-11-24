@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import UserForm, ProfileForm, ProductForm, PhotoFormSet, ProductAccountLinkFormSet, ProductAccountIdLinkFormSet, PromoPlanForm # , ProductKeywordFormSet, KeywordForm
+from .forms import UserForm, ProfileForm, ProductForm, PhotoFormSet, ProductAccountIdLinkFormSet, PromoPlanForm # , ProductKeywordFormSet, KeywordForm, ProductAccountLinkFormSet
 from .models import Profile, Product, PromoPlan #, Keyword
 from django.urls import reverse
 # from django.core.exceptions import ValidationError
@@ -64,20 +64,21 @@ def product_detail(request, id):
 def product_create(request):
     if request.method == 'POST':
         product_form = ProductForm(request.POST)
-        account_link_formset = ProductAccountLinkFormSet(request.POST, prefix='accounts')
+        # account_link_formset = ProductAccountLinkFormSet(request.POST, prefix='accounts')
         account_id_link_formset = ProductAccountIdLinkFormSet(request.POST, prefix='account_ids')  # New formset
         photo_formset = PhotoFormSet(request.POST, request.FILES, prefix='photos')
 
-        if all([product_form.is_valid(), account_link_formset.is_valid(), account_id_link_formset.is_valid(), photo_formset.is_valid()]):  # Updated validation
+        # if all([product_form.is_valid(), account_link_formset.is_valid(), account_id_link_formset.is_valid(), photo_formset.is_valid()]):  # Updated validation
+        if all([product_form.is_valid(), account_id_link_formset.is_valid(), photo_formset.is_valid()]):  # Updated validation
             product = product_form.save(commit=False)
             product.profile = request.user.profile
             product.save()
 
             # Handle account links
-            for form in account_link_formset.save(commit=False):
-                form.product = product
-                form.save()
-            account_link_formset.save_m2m()
+            # for form in account_link_formset.save(commit=False):
+            #     form.product = product
+            #     form.save()
+            # account_link_formset.save_m2m()
 
             # Handle account id links (New block)
             for form in account_id_link_formset.save(commit=False):
@@ -94,13 +95,13 @@ def product_create(request):
             return redirect('client_profile:profile_products')
     else:
         product_form = ProductForm()
-        account_link_formset = ProductAccountLinkFormSet(prefix='accounts')
+        # account_link_formset = ProductAccountLinkFormSet(prefix='accounts')
         account_id_link_formset = ProductAccountIdLinkFormSet(prefix='account_ids')  # New formset
         photo_formset = PhotoFormSet(prefix='photos')
 
     return render(request, 'client_profile/product_create.html', {
         'product_form': product_form,
-        'account_link_formset': account_link_formset,
+        # 'account_link_formset': account_link_formset,
         'account_id_link_formset': account_id_link_formset,  # Pass the new formset to the template
         'photo_formset': photo_formset,
         'segment': 'product_create',

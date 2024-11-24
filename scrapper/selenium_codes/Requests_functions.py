@@ -1,4 +1,6 @@
 from bs4 import BeautifulSoup
+from scrapper.utils import parse_discount_from_text
+
 import aiohttp
 import asyncio
 import json
@@ -126,41 +128,6 @@ async def fetch_amazon_product(session, product_id):
             return title, price, shipping_info, sold_by_info, availability_info, discount_percentage, sold_count, amazons_choice
 
 
-    # try:
-    #     async with session.get(url, headers=headers) as response:
-    #         content = await response.text()
-    #         soup = BeautifulSoup(content, 'html.parser')
-
-    #         # Try to find the price
-    #         price = None
-    #         price_element = soup.find(class_='reinventPricePriceToPayMargin')
-    #         if not price_element:
-    #             logging.warning(f"Price not found for {product_id}, trying alternative class.")
-    #             price_element = soup.find(id='priceblock_ourprice')  # Alternative class/id for price
-    #         if price_element:
-    #             price = price_element.get_text(strip=True).replace("\n", ".").replace("SAR", "").strip()
-
-    #         # Try to find shipping info
-    #         shipping_info = None
-    #         ship_element = soup.find(class_='offer-display-feature-text-message')
-    #         if not ship_element:
-    #             logging.warning(f"Shipping info not found for {product_id}, trying alternative class.")
-    #             ship_element = soup.find(id='merchant-info')  # Alternative class/id for shipping
-    #         if ship_element:
-    #             shipping_info = ship_element.get_text(strip=True)
-
-    #         # Try to find 'Sold By' info
-    #         sold_by_info = None
-    #         sold_by_elements = soup.find_all(class_='offer-display-feature-text-message')
-    #         if len(sold_by_elements) > 1:
-    #             sold_by_info = sold_by_elements[1].get_text(strip=True)
-    #         else:
-    #             logging.warning(f"Sold by info not found for {product_id}, trying alternative approach.")
-    #             sold_by_info = soup.find(id='sellerProfileTriggerId')  # Alternative class/id for sold by
-
-    #         # Log details for debugging
-    #         logging.info(f"Product ID: {product_id}, Price: {price}, Shipping: {shipping_info}, Sold By: {sold_by_info}")
-    #         return price, shipping_info, sold_by_info
 
     except Exception as e:
         logging.error(f"Error fetching data for {product_id}: {e}")
@@ -181,6 +148,8 @@ async def get_amazon_product_details(product_ids):
             titles, prices_amazon, amazon_shipping, amazon_sold, availability_infos, discount_percentages, sold_counts, amazons_choices = ([], [], [], [], [], [], [], [])
 
         return titles, prices_amazon, amazon_shipping, amazon_sold, availability_infos, discount_percentages, sold_counts, amazons_choices
+
+
 
 # Fetch Nahdi Data Asynchronously
 async def fetch_nahdi_data(session, query):
@@ -242,9 +211,16 @@ def process_nahdi_response(data):
             
             # Extract the necessary fields with default values if not found
             original_price = hit.get('price', {}).get('SAR', {}).get('default_original_formated', None)
+            price = hit.get('price', {}).get('SAR', {}).get('default', None)
+
             # Remove " SAR" and commas, then convert to float if not None
             if original_price:
                 original_price = float(original_price.replace(' SAR', '').replace(',', '').strip())
+             # Apply the coalesce logic to determine the effective price
+            if original_price is None:
+                discount = 0
+            else:
+                discount = (100 - (price/original_price)* 100  ) 
 
             nahdi_data.append({
                 'name': hit.get('store_en', {}).get('name', None),
@@ -253,7 +229,9 @@ def process_nahdi_response(data):
                 'ordered_qty': hit.get('ordered_qty', None),
                 'sold_out': hit.get('sold_out', None),
                 'in_stock': hit.get('in_stock', None),
-                'limited_stock': hit.get('limited_stock', None)
+                'limited_stock': hit.get('limited_stock', None),
+                'discount': discount,
+
             })
     return nahdi_data
 
@@ -272,10 +250,13 @@ async def get_nahdi_prices(nahdi_queries):
                 'price_original': data[0]['original_price'] if data else None,
                 'ordered_qty': data[0]['ordered_qty'] if data else None,
                 'sold_out': data[0]['sold_out'] if data else None,
-                'limited_stock': data[0]['limited_stock'] if data else None
+                'limited_stock': data[0]['limited_stock'] if data else None,
+                'discount': data[0]['discount'] if data else None
             }
             for data in all_nahdi_data
         ]
+
+
 
 # Fetch Dawa Data Asynchronously
 async def fetch_dawa_data(session, query):
@@ -333,6 +314,13 @@ def process_dawa_response(data):
             if original_price:
                 original_price = float(original_price.replace(' SAR', '').replace(',', '').strip())
 
+            # Extract offer text
+            offer_text_notag = hit.get('offer_text_notag', None)
+            
+            # Calculate discount
+            discount = parse_discount_from_text(offer_text_notag) if offer_text_notag else 0
+
+
             dawa_data.append({
                 'name': hit.get('name', None),
                 'price': hit.get('price', {}).get('SAR', {}).get('default', None),
@@ -340,6 +328,7 @@ def process_dawa_response(data):
                 'in_stock': hit.get('in_stock', None),
                 'is_in_stock_msi': hit.get('is_in_stock_msi', None),
                 'offer_text_notag': hit.get('offer_text_notag', None),
+                'discount': discount,
             })
     return dawa_data
 
@@ -357,8 +346,138 @@ async def get_dawa_prices(dawa_queries):
                 'availability_info': data[0]['in_stock'] if data else None,
                 'price_original': data[0]['price_original'] if data else None,
                 'is_in_stock_msi': data[0]['is_in_stock_msi'] if data else None,
-                'offer_text_notag': data[0]['offer_text_notag'] if data else None
+                'offer_text_notag': data[0]['offer_text_notag'] if data else None,
+                'discount': data[0]['discount'] if data else None,
             }
             for data in all_dawa_data
         ]
 
+
+
+
+# Function to fetch data from Noon.sa
+async def fetch_noon_data(session, query):
+    url = f'https://www.noon.com/saudi-en/search/?q={query}'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Cookie': 'visitor_id=bc156d3c-96ce-4a6b-a3a5-4aa64c31c134; ...',  # Shortened for brevity
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+    }
+
+    # print(f"Fetching data for query: {query}")
+    try:
+        async with session.get(url, headers=headers) as response:
+            # print(f"Response status for '{query}': {response.status}")
+            response_data = await response.text()
+            return response_data
+    except Exception as e:
+        print(f"Error fetching data for query '{query}': {e}")
+        return None
+
+# Function to process the Noon response
+def process_noon_response(html_content):
+    # print("Processing HTML content...")
+    soup = BeautifulSoup(html_content, 'html.parser')
+    script_tag = soup.find('script', id="__NEXT_DATA__", type="application/json")
+    
+    if not script_tag:
+        print("Error: __NEXT_DATA__ script not found in the HTML.")
+        return []
+
+    try:
+        data = json.loads(script_tag.string)
+        # print("Successfully parsed JSON data.")
+    except json.JSONDecodeError:
+        print("Error: Failed to parse JSON data.")
+        return []
+
+    # # Print the entire JSON structure for debugging
+    # with open("debug_noon_data.json", "w", encoding="utf-8") as f:
+    #     json.dump(data, f, indent=4)
+    # print("JSON structure saved to 'debug_noon_data.json' for inspection.")
+
+    # Extract hits and facets
+    processed_data = []
+    hits = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('hits', [])
+    facets = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('facets', [])
+
+    # print(f"Number of hits: {len(hits)}")
+    # print(f"Number of facets: {len(facets)}")
+
+    for hit in hits:
+        name = hit.get('name')
+        price = hit.get('price')
+        original_price = hit.get('sale_price')
+        is_buyable = hit.get('is_buyable', None)  # Extracting "is_buyable" field
+
+        # Apply the coalesce logic to determine the effective price
+        if original_price is None:
+            effective_price = price
+            discount = 0
+        else:
+            effective_price = original_price
+            discount = (100 - (original_price/price)* 100  ) 
+
+
+        # Extract "sold_by" information
+        sold_by = None
+        for facet in facets:
+            if facet.get('code') == "partner":
+                sold_by_data = facet.get('data', [])
+                if sold_by_data:
+                    sold_by = sold_by_data[0].get('name', None)  # Assuming the first seller is desired
+
+        processed_data.append({
+            'name': name,
+            'price': price,
+            'original_price': original_price,
+            'calculated_price': round(effective_price, 2),  # Final effective price
+            'discount': round(discount, 2),  # Discount percentage
+
+            'sold_by': sold_by,
+            'availability_info': is_buyable,  # Including availability info
+        })
+
+    # print(f"Processed {len(processed_data)} items.")
+    return processed_data
+
+# Asynchronous task to fetch and return Noon data for multiple queries
+async def get_noon_prices(noon_queries):
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_noon_data(session, query) for query in noon_queries]
+        responses = await asyncio.gather(*tasks)
+
+        # Process responses
+        all_noon_data = []
+        for i, response in enumerate(responses):
+            if response:  # Check if response is not None
+                # print(f"Processing response for query index {i}...")
+                processed = process_noon_response(response)
+                all_noon_data.append(processed)
+            else:
+                print(f"No response for query index {i}.")
+                all_noon_data.append([])
+
+        return [
+            {
+                'name': data[0]['name'] if data else None,
+                'original_price': data[0]['original_price'] if data else None,
+                'calculated_price': data[0]['calculated_price'] if data else None,
+                'discount': data[0]['discount'] if data else None,
+                'sold_by': data[0]['sold_by'] if data else None,
+                'availability_info': data[0]['availability_info'] if data else None,
+            }
+            for data in all_noon_data
+        ]

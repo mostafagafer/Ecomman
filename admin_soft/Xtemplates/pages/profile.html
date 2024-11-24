@@ -1,0 +1,42 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block content %}
+
+
+
+
+  <div class="job_details_area">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8 mx-auto">
+                  <div class="job_sumary">
+                      <div class="summery_header">
+                          <h3>Profile Summery</h3>
+                      </div>
+                      <div class="job_content">
+                          <ul>
+                              <li>Name: <span>{{profile}}</span></li>
+                              <li>Email: <span>{{profile.user.email}}</span></li>
+                              <li>Client: <span>{{profile.client}}</span></li>
+                              <li>Plan: <span>{{profile.plan}}</span></li>
+
+                          </ul>
+                          
+                      </div>
+                      <div class="p-5">
+                          <a class="boxed-btn3 w-100" href="#"> Edit Profile</a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+
+
+
+
+
+
+{% endblock content %}
