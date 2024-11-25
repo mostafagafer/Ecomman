@@ -5,7 +5,20 @@
 {% block content %} 
 
 
-<head>
+<div class="container-fluid">    
+
+<div class="row my-4">
+  <h1>Download Performance Data</h1>
+  <p>Click the button below to download performance data in Excel format.</p>
+  
+</div>
+<a href="{% url 'dashboard:download_performance_data' %}" class="btn btn-primary">Download Data</a>
+
+</div>
+
+
+
+<!-- <head>
     <meta charset="UTF-8">
     <title>Scraped Data List</title>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
@@ -116,7 +129,6 @@
   </table>
 
 </div>
-  <!-- Button to pin/unpin the PerformanceData -->
   <div class="mt-3">
     <a href="{% url 'dashboard:toggle_pin_table' 'PerformanceData' %}">
         {% if is_table_pinned %}
@@ -183,7 +195,7 @@
           table.draw();
       });
   });
-</script>
+</script> -->
 
 
 {% endblock content %}
