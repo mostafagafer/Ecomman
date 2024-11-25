@@ -23,7 +23,7 @@ class ScrapedData(models.Model):
     amazon_price = models.FloatField(blank=True, null=True)
     amazon_shipping = models.CharField(max_length=30, blank=True, null=True)
     amazon_sold_by = models.CharField(max_length=30, blank=True, null=True)
-    amazon_title = models.CharField(max_length=200, blank=True, null=True)
+    amazon_title = models.CharField(max_length=500, blank=True, null=True)
     amazon_availability_info = models.CharField(max_length=200, blank=True, null=True)
     amazon_discount = models.FloatField(blank=True, null=True)
     amazon_sold_count = models.CharField(max_length=200, blank=True, null=True)
@@ -31,7 +31,7 @@ class ScrapedData(models.Model):
     
     # Dawa attributes
     dawa_price = models.FloatField(blank=True, null=True)
-    dawa_title = models.CharField(max_length=200, blank=True, null=True)
+    dawa_title = models.CharField(max_length=500, blank=True, null=True)
     dawa_availability_info = models.IntegerField(blank=True, null=True)
     dawa_original_price = models.FloatField(blank=True, null=True)
     dawa_is_in_stock_msi = models.IntegerField(blank=True, null=True)
@@ -40,7 +40,7 @@ class ScrapedData(models.Model):
 
     # Nahdi attributes
     nahdi_price = models.FloatField(blank=True, null=True)
-    nahdi_title = models.CharField(max_length=200, blank=True, null=True)
+    nahdi_title = models.CharField(max_length=500, blank=True, null=True)
     nahdi_availability_info = models.IntegerField(blank=True, null=True)
     nahdi_original_price = models.FloatField(blank=True, null=True)
     nahdi_ordered_qty = models.FloatField(blank=True, null=True)
@@ -50,7 +50,7 @@ class ScrapedData(models.Model):
 
     # Noon_SA attributes
     noon_sa_price = models.FloatField(blank=True, null=True)
-    noon_sa_title = models.CharField(max_length=200, blank=True, null=True)
+    noon_sa_title = models.CharField(max_length=500, blank=True, null=True)
     noon_sa_availability_info = models.IntegerField(blank=True, null=True)
     noon_sa_original_price = models.FloatField(blank=True, null=True)
     noon_sa_discount = models.FloatField(blank=True, null=True)
@@ -358,31 +358,31 @@ class ScrapedBulkData(models.Model):
 
     # Amazon attributes 
     amazon_price = models.FloatField(blank=True, null=True)
-    amazon_title = models.CharField(max_length=200, blank=True, null=True)
-    amazon_sku = models.CharField(max_length=200, blank=True, null=True)
+    amazon_title = models.CharField(max_length=500, blank=True, null=True)
+    amazon_sku = models.CharField(max_length=500, blank=True, null=True)
     amazon_original_price = models.FloatField(blank=True, null=True)
     amazon_discount = models.FloatField(blank=True, null=True)
 
     # Dawa attributes
     dawa_price = models.FloatField(blank=True, null=True)
-    dawa_title = models.CharField(max_length=200, blank=True, null=True)
-    dawa_sku = models.CharField(max_length=200, blank=True, null=True)
+    dawa_title = models.CharField(max_length=500, blank=True, null=True)
+    dawa_sku = models.CharField(max_length=500, blank=True, null=True)
     dawa_original_price = models.FloatField(blank=True, null=True)
     dawa_offer_text_notag = models.CharField(max_length=200, blank=True, null=True)
     dawa_discount = models.FloatField(blank=True, null=True)
 
     # Nahdi attributes
     nahdi_price = models.FloatField(blank=True, null=True)
-    nahdi_title = models.CharField(max_length=200, blank=True, null=True)
-    nahdi_sku = models.CharField(max_length=200, blank=True, null=True)
+    nahdi_title = models.CharField(max_length=500, blank=True, null=True)
+    nahdi_sku = models.CharField(max_length=500, blank=True, null=True)
     nahdi_original_price = models.FloatField(blank=True, null=True)
     nahdi_ordered_qty = models.FloatField(blank=True, null=True)
     nahdi_discount = models.FloatField(blank=True, null=True)
 
     # Noon_SA attributes
     noon_sa_price = models.FloatField(blank=True, null=True)
-    noon_sa_title = models.CharField(max_length=200, blank=True, null=True)
-    noon_sa_sku = models.CharField(max_length=200, blank=True, null=True)
+    noon_sa_title = models.CharField(max_length=500, blank=True, null=True)
+    noon_sa_sku = models.CharField(max_length=500, blank=True, null=True)
     noon_sa_original_price = models.FloatField(blank=True, null=True)
     noon_sa_discount = models.FloatField(blank=True, null=True)
 
