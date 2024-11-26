@@ -11,6 +11,10 @@ from scrapper.tasks import scrape_user_products_task, scrape_user_Bulk_product_t
 from django.contrib import messages
 from django.http import HttpResponse
 from io import BytesIO
+import logging
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 @login_required
 def scrape_user_products_view(request):
@@ -37,116 +41,251 @@ def scrape_user_products_view(request):
     # Redirect to a page or render a template
     return redirect('dashboard:price')
 
+# @login_required
+# def dashboard_view(request):
+#     profile = Profile.objects.get(user=request.user)
+#     scraped_data = ScrapedData.objects.filter(product__profile=profile)
+
+#     # Get unique accounts associated with the user
+#     user_accounts = list(profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True))
+
+#     # Get categories and subcategories for the products
+#     categories = profile.products.values_list('category__name', flat=True).distinct()
+#     subcategories = profile.products.values_list('subcategory__name', flat=True).distinct()
+    
+#     # Combine categories and subcategories into a single list of key names
+#     key_names = list(categories) + list(subcategories)
+
+#     # Filter ScrapedBulkData based on key_name matching category or subcategory
+#     scraped_bulk_data = ScrapedBulkData.objects.filter(key_name__in=key_names)
+
+#     # Prepare data dictionary
+#     data = {
+#         'scraped_at': [],
+#         'RSP_VAT': [],
+#         'discount_percentage': [],
+#         'key_name': [],
+#         'amazon_title': [],
+#         'nahdi_title': [],
+#         'dawa_title': [],
+#         'noon_sa_title': [],
+#         'amazon_price': [],
+#         'nahdi_price': [],
+#         'dawa_price': [],
+#         'amazon_discount': [],
+#         'nahdi_discount': [],
+#         'dawa_discount': [],
+#         'noon_sa_discount': [],
+#         'noon_sa_price': [],
+#         'nahdi_ordered_qty': [],
+#         'opps': [],
+#         'Brand': [],
+#         'Category': [],
+#         'Subcategory': [],
+#         'Product': [],
+#         'Account': []
+#     }
+
+#     # Populate data from scraped_data
+#     for item in scraped_data:
+#         data['scraped_at'].append(item.scraped_at.isoformat())
+#         data['RSP_VAT'].append(item.product.RSP_VAT)
+#         data['discount_percentage'].append(item.discount_percentage if item.discount_percentage is not None else None)
+#         data['key_name'].append(None)  # Placeholder for bulk-only field
+#         data['amazon_title'].append(item.amazon_title if item.amazon_title is not None else None)
+#         data['dawa_title'].append(item.dawa_title if item.dawa_title is not None else None)
+#         data['nahdi_title'].append(item.nahdi_title if item.nahdi_title is not None else None)
+#         data['noon_sa_title'].append(item.noon_sa_title if item.noon_sa_title is not None else None)
+#         data['amazon_price'].append(item.amazon_price if item.amazon_price is not None else None)
+#         data['dawa_price'].append(item.dawa_price if item.dawa_price is not None else None)
+#         data['nahdi_price'].append(item.nahdi_price if item.nahdi_price is not None else None)
+#         data['amazon_discount'].append(item.amazon_discount if item.amazon_discount is not None else None)
+#         data['dawa_discount'].append(item.dawa_discount if item.dawa_discount is not None else None)
+#         data['nahdi_discount'].append(item.nahdi_discount if item.nahdi_discount is not None else None)
+#         data['nahdi_ordered_qty'].append(item.nahdi_ordered_qty if item.nahdi_ordered_qty is not None else None)
+#         data['noon_sa_price'].append(item.noon_sa_price if item.noon_sa_price is not None else None)
+#         data['noon_sa_discount'].append(item.noon_sa_discount if item.noon_sa_discount is not None else None)
+#         data['opps'].append(item.opps)
+#         data['Brand'].append(item.product.brand)
+#         data['Category'].append(item.product.category)
+#         data['Subcategory'].append(item.product.subcategory)
+#         data['Product'].append(item.product.TITLE)
+
+#         # Account concatenation
+#         accounts = item.product.accounts_id.all()
+#         account_names = [account.name for account in accounts]
+#         data['Account'].append(", ".join(account_names) if account_names else None)
+
+#     # Populate data from scraped_bulk_data
+#     for bulk_item in scraped_bulk_data:
+#         data['scraped_at'].append(bulk_item.scraped_at.isoformat())
+#         data['RSP_VAT'].append(None)  # Placeholder for non-bulk field
+#         data['discount_percentage'].append(None)  # Placeholder for non-bulk field
+#         data['key_name'].append(bulk_item.key_name)
+#         data['amazon_title'].append(bulk_item.amazon_title if bulk_item.amazon_title is not None else None)
+#         data['dawa_title'].append(bulk_item.dawa_title if bulk_item.dawa_title is not None else None)
+#         data['nahdi_title'].append(bulk_item.nahdi_title if bulk_item.nahdi_title is not None else None)
+#         data['noon_sa_title'].append(bulk_item.noon_sa_title if bulk_item.noon_sa_title is not None else None)
+#         data['amazon_price'].append(bulk_item.amazon_price if bulk_item.amazon_price is not None else None)
+#         data['dawa_price'].append(bulk_item.dawa_price if bulk_item.dawa_price is not None else None)
+#         data['nahdi_price'].append(bulk_item.nahdi_price if bulk_item.nahdi_price is not None else None)
+#         data['amazon_discount'].append(bulk_item.amazon_discount if bulk_item.amazon_discount is not None else None)
+#         data['dawa_discount'].append(bulk_item.dawa_discount if bulk_item.dawa_discount is not None else None)
+#         data['nahdi_discount'].append(bulk_item.nahdi_discount if bulk_item.nahdi_discount is not None else None)
+#         data['nahdi_ordered_qty'].append(bulk_item.nahdi_ordered_qty if bulk_item.nahdi_ordered_qty is not None else None)
+
+#         data['noon_sa_price'].append(bulk_item.noon_sa_price if bulk_item.noon_sa_price is not None else None)
+#         data['noon_sa_discount'].append(bulk_item.noon_sa_discount if bulk_item.noon_sa_discount is not None else None)
+
+#         data['opps'].append(None)  # Placeholder for non-bulk field
+#         data['Brand'].append(None)  # Placeholder for non-bulk field
+#         data['Category'].append(None)  # Placeholder for non-bulk field
+#         data['Subcategory'].append(None)  # Placeholder for non-bulk field
+#         data['Product'].append(None)  # Placeholder for non-bulk field
+#         data['Account'].append(None)  # Placeholder for non-bulk field
+
+
+
+#     # Initialize the Dash app
+#     plot_dashboard(data, user_accounts)
+
+#     context = {}
+#     return render(request, 'dashboard/dashboard.html', context)
+
 @login_required
 def dashboard_view(request):
-    profile = Profile.objects.get(user=request.user)
-    scraped_data = ScrapedData.objects.filter(product__profile=profile)
+    try:
+        print("Started dashboard_view function")
 
-    # Get unique accounts associated with the user
-    user_accounts = list(profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True))
+        profile = Profile.objects.get(user=request.user)
+        print(f"Profile retrieved for user {request.user}")
 
-    # Get categories and subcategories for the products
-    categories = profile.products.values_list('category__name', flat=True).distinct()
-    subcategories = profile.products.values_list('subcategory__name', flat=True).distinct()
-    
-    # Combine categories and subcategories into a single list of key names
-    key_names = list(categories) + list(subcategories)
+        scraped_data = ScrapedData.objects.filter(product__profile=profile)
+        print(f"ScrapedData retrieved: {scraped_data.count()} items")
 
-    # Filter ScrapedBulkData based on key_name matching category or subcategory
-    scraped_bulk_data = ScrapedBulkData.objects.filter(key_name__in=key_names)
+        # Get unique accounts associated with the user
+        user_accounts = list(profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True))
+        print(f"User accounts: {user_accounts}")
 
-    # Prepare data dictionary
-    data = {
-        'scraped_at': [],
-        'RSP_VAT': [],
-        'discount_percentage': [],
-        'key_name': [],
-        'amazon_title': [],
-        'nahdi_title': [],
-        'dawa_title': [],
-        'noon_sa_title': [],
-        'amazon_price': [],
-        'nahdi_price': [],
-        'dawa_price': [],
-        'amazon_discount': [],
-        'nahdi_discount': [],
-        'dawa_discount': [],
-        'noon_sa_discount': [],
-        'noon_sa_price': [],
-        'nahdi_ordered_qty': [],
-        'opps': [],
-        'Brand': [],
-        'Category': [],
-        'Subcategory': [],
-        'Product': [],
-        'Account': []
-    }
+        # Get categories and subcategories for the products
+        categories = profile.products.values_list('category__name', flat=True).distinct()
+        subcategories = profile.products.values_list('subcategory__name', flat=True).distinct()
+        print(f"Categories: {categories}, Subcategories: {subcategories}")
+        
+        # Combine categories and subcategories into a single list of key names
+        key_names = list(categories) + list(subcategories)
+        print(f"Key names (categories + subcategories): {key_names}")
 
-    # Populate data from scraped_data
-    for item in scraped_data:
-        data['scraped_at'].append(item.scraped_at.isoformat())
-        data['RSP_VAT'].append(item.product.RSP_VAT)
-        data['discount_percentage'].append(item.discount_percentage if item.discount_percentage is not None else None)
-        data['key_name'].append(None)  # Placeholder for bulk-only field
-        data['amazon_title'].append(item.amazon_title if item.amazon_title is not None else None)
-        data['dawa_title'].append(item.dawa_title if item.dawa_title is not None else None)
-        data['nahdi_title'].append(item.nahdi_title if item.nahdi_title is not None else None)
-        data['noon_sa_title'].append(item.noon_sa_title if item.noon_sa_title is not None else None)
-        data['amazon_price'].append(item.amazon_price if item.amazon_price is not None else None)
-        data['dawa_price'].append(item.dawa_price if item.dawa_price is not None else None)
-        data['nahdi_price'].append(item.nahdi_price if item.nahdi_price is not None else None)
-        data['amazon_discount'].append(item.amazon_discount if item.amazon_discount is not None else None)
-        data['dawa_discount'].append(item.dawa_discount if item.dawa_discount is not None else None)
-        data['nahdi_discount'].append(item.nahdi_discount if item.nahdi_discount is not None else None)
-        data['nahdi_ordered_qty'].append(item.nahdi_ordered_qty if item.nahdi_ordered_qty is not None else None)
-        data['noon_sa_price'].append(item.noon_sa_price if item.noon_sa_price is not None else None)
-        data['noon_sa_discount'].append(item.noon_sa_discount if item.noon_sa_discount is not None else None)
-        data['opps'].append(item.opps)
-        data['Brand'].append(item.product.brand)
-        data['Category'].append(item.product.category)
-        data['Subcategory'].append(item.product.subcategory)
-        data['Product'].append(item.product.TITLE)
+        # Filter ScrapedBulkData based on key_name matching category or subcategory
+        scraped_bulk_data = ScrapedBulkData.objects.filter(key_name__in=key_names)
+        print(f"ScrapedBulkData retrieved: {scraped_bulk_data.count()} items")
 
-        # Account concatenation
-        accounts = item.product.accounts_id.all()
-        account_names = [account.name for account in accounts]
-        data['Account'].append(", ".join(account_names) if account_names else None)
+        # Prepare data dictionary
+        data = {
+            'scraped_at': [],
+            'RSP_VAT': [],
+            'discount_percentage': [],
+            'key_name': [],
+            'amazon_title': [],
+            'nahdi_title': [],
+            'dawa_title': [],
+            'noon_sa_title': [],
+            'amazon_price': [],
+            'nahdi_price': [],
+            'dawa_price': [],
+            'amazon_discount': [],
+            'nahdi_discount': [],
+            'dawa_discount': [],
+            'noon_sa_discount': [],
+            'noon_sa_price': [],
+            'nahdi_ordered_qty': [],
+            'opps': [],
+            'Brand': [],
+            'Category': [],
+            'Subcategory': [],
+            'Product': [],
+            'Account': []
+        }
 
-    # Populate data from scraped_bulk_data
-    for bulk_item in scraped_bulk_data:
-        data['scraped_at'].append(bulk_item.scraped_at.isoformat())
-        data['RSP_VAT'].append(None)  # Placeholder for non-bulk field
-        data['discount_percentage'].append(None)  # Placeholder for non-bulk field
-        data['key_name'].append(bulk_item.key_name)
-        data['amazon_title'].append(bulk_item.amazon_title if bulk_item.amazon_title is not None else None)
-        data['dawa_title'].append(bulk_item.dawa_title if bulk_item.dawa_title is not None else None)
-        data['nahdi_title'].append(bulk_item.nahdi_title if bulk_item.nahdi_title is not None else None)
-        data['noon_sa_title'].append(bulk_item.noon_sa_title if bulk_item.noon_sa_title is not None else None)
-        data['amazon_price'].append(bulk_item.amazon_price if bulk_item.amazon_price is not None else None)
-        data['dawa_price'].append(bulk_item.dawa_price if bulk_item.dawa_price is not None else None)
-        data['nahdi_price'].append(bulk_item.nahdi_price if bulk_item.nahdi_price is not None else None)
-        data['amazon_discount'].append(bulk_item.amazon_discount if bulk_item.amazon_discount is not None else None)
-        data['dawa_discount'].append(bulk_item.dawa_discount if bulk_item.dawa_discount is not None else None)
-        data['nahdi_discount'].append(bulk_item.nahdi_discount if bulk_item.nahdi_discount is not None else None)
-        data['nahdi_ordered_qty'].append(bulk_item.nahdi_ordered_qty if bulk_item.nahdi_ordered_qty is not None else None)
+        # Populate data from scraped_data
+        for item in scraped_data:
+            try:
+                # print(f"Processing scraped_data item: {item.id}")
+                data['scraped_at'].append(item.scraped_at.isoformat())
+                data['RSP_VAT'].append(item.product.RSP_VAT if item.product.RSP_VAT is not None else None)
+                data['discount_percentage'].append(item.discount_percentage if item.discount_percentage is not None else None)
+                data['key_name'].append(None)  # Placeholder for bulk-only field
+                data['amazon_title'].append(item.amazon_title if item.amazon_title is not None else None)
+                data['dawa_title'].append(item.dawa_title if item.dawa_title is not None else None)
+                data['nahdi_title'].append(item.nahdi_title if item.nahdi_title is not None else None)
+                data['noon_sa_title'].append(item.noon_sa_title if item.noon_sa_title is not None else None)
+                data['amazon_price'].append(item.amazon_price if item.amazon_price is not None else None)
+                data['dawa_price'].append(item.dawa_price if item.dawa_price is not None else None)
+                data['nahdi_price'].append(item.nahdi_price if item.nahdi_price is not None else None)
+                data['amazon_discount'].append(item.amazon_discount if item.amazon_discount is not None else None)
+                data['dawa_discount'].append(item.dawa_discount if item.dawa_discount is not None else None)
+                data['nahdi_discount'].append(item.nahdi_discount if item.nahdi_discount is not None else None)
+                data['nahdi_ordered_qty'].append(item.nahdi_ordered_qty if item.nahdi_ordered_qty is not None else None)
+                data['noon_sa_price'].append(item.noon_sa_price if item.noon_sa_price is not None else None)
+                data['noon_sa_discount'].append(item.noon_sa_discount if item.noon_sa_discount is not None else None)
+                data['opps'].append(item.opps if item.opps is not None else None)
+                data['Brand'].append(item.product.brand if item.product.brand is not None else None)
+                data['Category'].append(item.product.category if item.product.category is not None else None)
+                data['Subcategory'].append(item.product.subcategory if item.product.subcategory is not None else None)
+                data['Product'].append(item.product.TITLE if item.product.TITLE is not None else None)
 
-        data['noon_sa_price'].append(bulk_item.noon_sa_price if bulk_item.noon_sa_price is not None else None)
-        data['noon_sa_discount'].append(bulk_item.noon_sa_discount if bulk_item.noon_sa_discount is not None else None)
+                # Account concatenation
+                accounts = item.product.accounts_id.all()
+                account_names = [account.name for account in accounts]
+                data['Account'].append(", ".join(account_names) if account_names else None)
 
-        data['opps'].append(None)  # Placeholder for non-bulk field
-        data['Brand'].append(None)  # Placeholder for non-bulk field
-        data['Category'].append(None)  # Placeholder for non-bulk field
-        data['Subcategory'].append(None)  # Placeholder for non-bulk field
-        data['Product'].append(None)  # Placeholder for non-bulk field
-        data['Account'].append(None)  # Placeholder for non-bulk field
+            except Exception as e:
+                logger.error(f"Error processing scraped_data item {item.id}: {e}")
+                continue  # Skip this item and move to the next one
 
+        # Populate data from scraped_bulk_data
+        for bulk_item in scraped_bulk_data:
+            try:
+                # print(f"Processing scraped_bulk_data item: {bulk_item.id}")
+                data['scraped_at'].append(bulk_item.scraped_at.isoformat())
+                data['RSP_VAT'].append(None)  # Placeholder for non-bulk field
+                data['discount_percentage'].append(None)  # Placeholder for non-bulk field
+                data['key_name'].append(bulk_item.key_name)
+                data['amazon_title'].append(bulk_item.amazon_title if bulk_item.amazon_title is not None else None)
+                data['dawa_title'].append(bulk_item.dawa_title if bulk_item.dawa_title is not None else None)
+                data['nahdi_title'].append(bulk_item.nahdi_title if bulk_item.nahdi_title is not None else None)
+                data['noon_sa_title'].append(bulk_item.noon_sa_title if bulk_item.noon_sa_title is not None else None)
+                data['amazon_price'].append(bulk_item.amazon_price if bulk_item.amazon_price is not None else None)
+                data['dawa_price'].append(bulk_item.dawa_price if bulk_item.dawa_price is not None else None)
+                data['nahdi_price'].append(bulk_item.nahdi_price if bulk_item.nahdi_price is not None else None)
+                data['amazon_discount'].append(bulk_item.amazon_discount if bulk_item.amazon_discount is not None else None)
+                data['dawa_discount'].append(bulk_item.dawa_discount if bulk_item.dawa_discount is not None else None)
+                data['nahdi_discount'].append(bulk_item.nahdi_discount if bulk_item.nahdi_discount is not None else None)
+                data['nahdi_ordered_qty'].append(bulk_item.nahdi_ordered_qty if bulk_item.nahdi_ordered_qty is not None else None)
+                data['noon_sa_price'].append(bulk_item.noon_sa_price if bulk_item.noon_sa_price is not None else None)
+                data['noon_sa_discount'].append(bulk_item.noon_sa_discount if bulk_item.noon_sa_discount is not None else None)
+                data['opps'].append(None)  # Placeholder for non-bulk field
+                data['Brand'].append(None)  # Placeholder for non-bulk field
+                data['Category'].append(None)  # Placeholder for non-bulk field
+                data['Subcategory'].append(None)  # Placeholder for non-bulk field
+                data['Product'].append(None)  # Placeholder for non-bulk field
+                data['Account'].append(None)  # Placeholder for non-bulk field
 
+            except Exception as e:
+                logger.error(f"Error processing scraped_bulk_data item {bulk_item.id}: {e}")
+                continue  # Skip this item and move to the next one
 
-    # Initialize the Dash app
-    plot_dashboard(data, user_accounts)
+        print("Data populated, initializing the Dash app")
+        # Initialize the Dash app
+        plot_dashboard(data, user_accounts)
 
-    context = {}
-    return render(request, 'dashboard/dashboard.html', context)
+        context = {}
+        return render(request, 'dashboard/dashboard.html', context)
+
+    except Exception as e:
+        logger.error(f"Error in dashboard_view: {e}")
+        return render(request, 'error.html', {'error': str(e)})
+
 
 @login_required
 def performance_view(request):

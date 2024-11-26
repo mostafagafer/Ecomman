@@ -16,6 +16,7 @@ test.py
 LesEtaps.txt
 .DS_Store
 db.sqlite3
+ISAinvest.py
 
 client_profile/templates/client_profile/X_product_form copy.html 
 client_profile/templates/client_profile/X_product_form.html 
