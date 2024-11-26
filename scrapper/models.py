@@ -255,7 +255,10 @@ class ScrapedData(models.Model):
                                            self.dawa_price, 
                                            self.nahdi_price,
                                            self.noon_sa_price] if price is not None)
-        compliant_stores = sum(1 for flag in [self.amazon_compliance_flag, self.dawa_compliance_flag, self.nahdi_compliance_flag, self.noon_sa_compliance_flag] if flag)
+        compliant_stores = sum(1 for flag in [self.amazon_compliance_flag, 
+                                              self.dawa_compliance_flag, 
+                                              self.nahdi_compliance_flag, 
+                                              self.noon_sa_compliance_flag] if flag)
         
         if total_stores == 0:
             return 0
@@ -328,7 +331,7 @@ class ScrapedData(models.Model):
 
             f"Promo Flag: {'Yes' if self.promo_flag else 'No'}",
             f"Discount Percentage: {self.discount_percentage:.2f}%",
-            f"Final Price: {self.final_price:.2f}",
+            f"Final Price: {self.final_price:.2f}" if self.final_price else "Final Price: None",
             f"Price Deviation Score: {self.price_deviation_score:.2f}",
             f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}",
             f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}",
