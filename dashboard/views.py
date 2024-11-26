@@ -157,9 +157,11 @@ def dashboard_view(request):
     try:
         print("Started dashboard_view function")
 
+        # Retrieve the user's profile
         profile = Profile.objects.get(user=request.user)
         print(f"Profile retrieved for user {request.user}")
 
+        # Retrieve ScrapedData based on the user's profile
         scraped_data = ScrapedData.objects.filter(product__profile=profile)
         print(f"ScrapedData retrieved: {scraped_data.count()} items")
 
@@ -171,7 +173,7 @@ def dashboard_view(request):
         categories = profile.products.values_list('category__name', flat=True).distinct()
         subcategories = profile.products.values_list('subcategory__name', flat=True).distinct()
         print(f"Categories: {categories}, Subcategories: {subcategories}")
-        
+
         # Combine categories and subcategories into a single list of key names
         key_names = list(categories) + list(subcategories)
         print(f"Key names (categories + subcategories): {key_names}")
@@ -210,7 +212,18 @@ def dashboard_view(request):
         # Populate data from scraped_data
         for item in scraped_data:
             try:
-                # print(f"Processing scraped_data item: {item.id}")
+                # Extract relevant fields with null checks
+                brand = item.product.brand if item.product and item.product.brand else None
+                category = item.product.category if item.product and item.product.category else None
+                subcategory = item.product.subcategory if item.product and item.product.subcategory else None
+                product_title = item.product.TITLE if item.product and item.product.TITLE else None
+
+                # Account concatenation
+                accounts = item.product.accounts_id.all()
+                account_names = [account.name for account in accounts]
+                account_str = ", ".join(account_names) if account_names else None
+
+                # Append the values to the data dictionary
                 data['scraped_at'].append(item.scraped_at.isoformat())
                 data['RSP_VAT'].append(item.product.RSP_VAT if item.product.RSP_VAT is not None else None)
                 data['discount_percentage'].append(item.discount_percentage if item.discount_percentage is not None else None)
@@ -229,15 +242,11 @@ def dashboard_view(request):
                 data['noon_sa_price'].append(item.noon_sa_price if item.noon_sa_price is not None else None)
                 data['noon_sa_discount'].append(item.noon_sa_discount if item.noon_sa_discount is not None else None)
                 data['opps'].append(item.opps if item.opps is not None else None)
-                data['Brand'].append(item.product.brand if item.product.brand is not None else None)
-                data['Category'].append(item.product.category if item.product.category is not None else None)
-                data['Subcategory'].append(item.product.subcategory if item.product.subcategory is not None else None)
-                data['Product'].append(item.product.TITLE if item.product.TITLE is not None else None)
-
-                # Account concatenation
-                accounts = item.product.accounts_id.all()
-                account_names = [account.name for account in accounts]
-                data['Account'].append(", ".join(account_names) if account_names else None)
+                data['Brand'].append(brand)
+                data['Category'].append(category)
+                data['Subcategory'].append(subcategory)
+                data['Product'].append(product_title)
+                data['Account'].append(account_str)
 
             except Exception as e:
                 logger.error(f"Error processing scraped_data item {item.id}: {e}")
@@ -246,7 +255,15 @@ def dashboard_view(request):
         # Populate data from scraped_bulk_data
         for bulk_item in scraped_bulk_data:
             try:
-                # print(f"Processing scraped_bulk_data item: {bulk_item.id}")
+                # Extract relevant fields with null checks
+                brand = None
+                category = None
+                subcategory = None
+                product_title = None
+
+
+
+                # Append the values to the data dictionary
                 data['scraped_at'].append(bulk_item.scraped_at.isoformat())
                 data['RSP_VAT'].append(None)  # Placeholder for non-bulk field
                 data['discount_percentage'].append(None)  # Placeholder for non-bulk field
@@ -269,7 +286,7 @@ def dashboard_view(request):
                 data['Category'].append(None)  # Placeholder for non-bulk field
                 data['Subcategory'].append(None)  # Placeholder for non-bulk field
                 data['Product'].append(None)  # Placeholder for non-bulk field
-                data['Account'].append(None)  # Placeholder for non-bulk field
+                data['Account'].append(None)
 
             except Exception as e:
                 logger.error(f"Error processing scraped_bulk_data item {bulk_item.id}: {e}")
