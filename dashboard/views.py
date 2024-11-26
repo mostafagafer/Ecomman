@@ -261,8 +261,6 @@ def dashboard_view(request):
                 subcategory = None
                 product_title = None
 
-
-
                 # Append the values to the data dictionary
                 data['scraped_at'].append(bulk_item.scraped_at.isoformat())
                 data['RSP_VAT'].append(None)  # Placeholder for non-bulk field
@@ -302,7 +300,6 @@ def dashboard_view(request):
     except Exception as e:
         logger.error(f"Error in dashboard_view: {e}")
         return render(request, 'error.html', {'error': str(e)})
-
 
 @login_required
 def performance_view(request):
