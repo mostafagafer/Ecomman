@@ -8,12 +8,6 @@ from django.utils.text import slugify
 from django.conf import settings
 from django.utils.translation import gettext_lazy 
 
-# # Predefined dictionary for account names and their URL requirements
-# ACCOUNT_URL_VALIDATIONS = {
-#     'amazon': 'amzn.eu',
-#     'dawa': 'al-dawaa.com',
-#     'nahdi': 'nahdionline.com',
-# }
 
 ACCOUNT_KEY = ['amazon', 'dawa', 'nahdi', 'noon_sa']
 
@@ -27,12 +21,6 @@ class Profile(models.Model):
     def __str__(self):
         return str(self.user)
 
-# class Account(models.Model):
-#     name = models.CharField(max_length=100, choices=[(key, key) for key in ACCOUNT_URL_VALIDATIONS.keys()])
-#     domain = models.URLField()  # Now this field is a URLField
-
-#     def __str__(self):
-#         return self.name
 
 class Account_id(models.Model):
     name = models.CharField(max_length=100, choices=[(key, key) for key in ACCOUNT_KEY])
@@ -66,7 +54,6 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     RSP = models.FloatField(null=True, blank=True)  # Allowing null and blank
     RSP_VAT = models.FloatField(null=True, blank=True)  # Allowing null and blank
-    # accounts = models.ManyToManyField(Account, through='ProductAccountLink')
     accounts_id = models.ManyToManyField(Account_id, through='ProductAccountLinkId')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
@@ -86,24 +73,6 @@ class ProductAccountLinkId(models.Model):
         return f"{self.product.TITLE} - {self.account.name} - {self.identifier}"
 
 
-
-# class ProductAccountLink(models.Model):
-#     product = models.ForeignKey(Product, related_name='account_links', on_delete=models.CASCADE)
-#     account = models.ForeignKey(Account, related_name='product_links', on_delete=models.CASCADE)
-#     url = models.URLField()
-
-#     def clean(self):
-#         if hasattr(self, 'account') and self.account:
-#             # Validate the URL based on the account name
-#             account_name = self.account.name
-#             required_domain = ACCOUNT_URL_VALIDATIONS.get(account_name)
-#             if required_domain and required_domain not in self.url:
-#                 raise ValidationError(f'The URL must contain "{required_domain}" for the account "{account_name}".')
-#         elif not hasattr(self, 'account'):
-#             raise ValidationError('Account is required')
-
-#     def __str__(self):
-#         return f"{self.product.TITLE} - {self.account.name}"
             
 
 class PinnedTable(models.Model):
