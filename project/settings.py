@@ -43,7 +43,7 @@ CSRF_TRUSTED_ORIGINS  = ['https://ecomman.up.railway.app']
 
 INSTALLED_APPS = [
     #Installed_apps with proirity
-    'admin_soft',
+    'admin_soft.apps.AdminSoftDashboardConfig',
 
     'django.contrib.admin',
     'django.contrib.auth',
