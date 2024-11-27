@@ -295,14 +295,14 @@ def dashboard_view(request):
         plot_dashboard(data, user_accounts)
 
         context = {}
-        # return render(request, 'dashboard/dashboard.html', context)
-        return JsonResponse({
-    "status": "success",
-    "scraped_count": scraped_data.count(),
-    "bulk_count": scraped_bulk_data.count(),
-    "categories": list(categories),
-    "subcategories": list(subcategories),
-})
+        return render(request, 'dashboard/dashboard.html', context)
+#         return JsonResponse({
+#     "status": "success",
+#     "scraped_count": scraped_data.count(),
+#     "bulk_count": scraped_bulk_data.count(),
+#     "categories": list(categories),
+#     "subcategories": list(subcategories),
+# })
 
 
     except Exception as e:
