@@ -213,10 +213,10 @@ def dashboard_view(request):
         for item in scraped_data:
             try:
                 # Extract relevant fields with null checks
-                brand = item.product.brand if item.product and item.product.brand else None
-                category = item.product.category if item.product and item.product.category else None
-                subcategory = item.product.subcategory if item.product and item.product.subcategory else None
-                product_title = item.product.TITLE if item.product and item.product.TITLE else None
+                # brand = item.product.brand if item.product and item.product.brand else None
+                # category = item.product.category if item.product and item.product.category else None
+                # subcategory = item.product.subcategory if item.product and item.product.subcategory else None
+                # product_title = item.product.TITLE if item.product and item.product.TITLE else None
 
                 # Account concatenation
                 accounts = item.product.accounts_id.all()
@@ -242,10 +242,10 @@ def dashboard_view(request):
                 data['noon_sa_price'].append(item.noon_sa_price if item.noon_sa_price is not None else None)
                 data['noon_sa_discount'].append(item.noon_sa_discount if item.noon_sa_discount is not None else None)
                 data['opps'].append(item.opps if item.opps is not None else None)
-                data['Brand'].append(brand)
-                data['Category'].append(category)
-                data['Subcategory'].append(subcategory)
-                data['Product'].append(product_title)
+                data['Brand'].append(item.product.brand if item.product.brand is not None else None)
+                data['Category'].append(item.product.category if item.product.category is not None else None)
+                data['Subcategory'].append(item.product.subcategory if item.product.subcategory is not None else None)
+                data['Product'].append(item.product.TITLE if item.product.TITLE is not None else None)
                 data['Account'].append(account_str)
 
             except Exception as e:
