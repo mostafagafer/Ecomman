@@ -11,7 +11,6 @@ def plot_dashboard(data, user_accounts):
     df = pd.DataFrame(data)
     # df.to_csv('df_main.cav')
     df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
-    df = pd.DataFrame(data)
 
     app = DjangoDash('OPPS_Line', external_stylesheets=['https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'])
 
