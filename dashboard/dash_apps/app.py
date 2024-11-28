@@ -5,10 +5,29 @@ import pandas as pd
 from dash import dcc, html, Input, Output, callback
 from django_plotly_dash import DjangoDash
 import copy
+import json
 
+def plot_dashboard(serialized_data, user_accounts):
+    # Debug: Confirm serialized_data is in JSON format
+    if isinstance(serialized_data, dict):
+        raise TypeError("serialized_data must be JSON, not a Python dictionary")
 
-def plot_dashboard(data, user_accounts):
+    # Deserialize JSON data
+    data = json.loads(serialized_data)
+
+    # Debug: Print lengths of data fields
+    for key, value in data.items():
+        print(f"{key}: {len(value)}")
+
+    # Create DataFrame
     df = pd.DataFrame(data)
+
+    # Parse datetime fields
+    if 'scraped_at' in df.columns:
+        df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
+
+    # Debug: Print DataFrame info
+    print(df.info())
     # df.to_csv('df_main.cav')
     df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
 
@@ -136,8 +155,11 @@ def plot_dashboard(data, user_accounts):
             df_product.loc[:, numeric_columns] = df_product[numeric_columns].replace([None, 'N/A'], pd.NA).apply(pd.to_numeric, errors='coerce')
 
             # Filter for category or subcategory match with key_name
-            categories = [cat.name for cat in df_product['Category'].unique()]
-            subcategories = [subcat.name for subcat in df_product['Subcategory'].unique()]
+            categories = list(df_product['Category'].dropna().unique())
+            subcategories = list(df_product['Subcategory'].dropna().unique())
+
+            print("Categories:", df_product['Category'].unique())
+            print("Subcategories:", df_product['Subcategory'].unique())
 
             # Filter bulk_df where key_name matches any Category or Subcategory in df_product
             bulk_df = df_copy[df_copy["key_name"].isin(categories + subcategories)]

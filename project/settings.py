@@ -296,6 +296,23 @@ LOGGING = {
 }
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
+# Chaches configuratio
+if ENVIRONMENT == 'development':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': 'redis://localhost:6379/1',
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': env('REDIS_URL'),
+        }
+    }
+
+
 LOGIN_REDIRECT_URL = 'dashboard:index' #'accounts:profile'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 # LOGIN_URL = 'accounts:login'
