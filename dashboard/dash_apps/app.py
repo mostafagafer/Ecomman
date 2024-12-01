@@ -16,8 +16,8 @@ def plot_dashboard(serialized_data, user_accounts):
     data = json.loads(serialized_data)
 
     # Debug: Print lengths of data fields
-    for key, value in data.items():
-        print(f"{key}: {len(value)}")
+    # for key, value in data.items():
+    #     print(f"{key}: {len(value)}")
 
     # Create DataFrame
     df = pd.DataFrame(data)
@@ -158,8 +158,8 @@ def plot_dashboard(serialized_data, user_accounts):
             categories = list(df_product['Category'].dropna().unique())
             subcategories = list(df_product['Subcategory'].dropna().unique())
 
-            print("Categories:", df_product['Category'].unique())
-            print("Subcategories:", df_product['Subcategory'].unique())
+            # print("Categories:", df_product['Category'].unique())
+            # print("Subcategories:", df_product['Subcategory'].unique())
 
             # Filter bulk_df where key_name matches any Category or Subcategory in df_product
             bulk_df = df_copy[df_copy["key_name"].isin(categories + subcategories)]
