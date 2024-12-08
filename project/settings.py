@@ -283,20 +283,6 @@ LOGGING = {
             'propagate': True,
         },
     },
-
-    'loggers': {
-    'django': {
-        'handlers': ['console', 'file'],
-        'level': 'DEBUG',
-        'propagate': True,
-    },
-    'dashboard': {  # Add your app-specific logger here
-        'handlers': ['console', 'file'],
-        'level': 'DEBUG',
-        'propagate': True,
-    },
-},
-
 }
 CELERY_TASK_TIME_LIMIT = 30 * 60
 

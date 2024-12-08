@@ -58,7 +58,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
-    is_competitor = models.BooleanField(default=False)  # Adding a new boolean field
+    is_competitor = models.BooleanField(default=False)  
 
 
     def __str__(self):

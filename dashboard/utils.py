@@ -36,7 +36,8 @@ def process_data(scraped_data, scraped_bulk_data):
         'Category': [],
         'Subcategory': [],
         'Product': [],
-        'Account': []
+        'Account': [],
+        'Competitor': []
     }
 
     # Populate data from `scraped_data`
@@ -68,6 +69,7 @@ def process_data(scraped_data, scraped_bulk_data):
         data['Subcategory'].append(str(item.product.subcategory) if item.product.subcategory else None)
         data['Product'].append(item.product.TITLE)
         data['Account'].append(account_str)
+        data['Competitor'].append(item.product.is_competitor)
 
     # Populate data from `scraped_bulk_data`
     for bulk_item in scraped_bulk_data:
@@ -94,7 +96,8 @@ def process_data(scraped_data, scraped_bulk_data):
         data['Subcategory'].append(None)
         data['Product'].append(None)
         data['Account'].append(None)
-
+        data['Competitor'].append(item.product.is_competitor)
+    
     # Align lengths of all lists
     min_length = min(len(values) for values in data.values())
     if min_length == 0:

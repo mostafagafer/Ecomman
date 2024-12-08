@@ -1,11 +1,12 @@
 
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
 from dash import dcc, html, Input, Output, callback
 from django_plotly_dash import DjangoDash
 import copy
 import json
+from plotly.subplots import make_subplots
 
 def plot_dashboard(serialized_data, user_accounts):
     # Debug: Confirm serialized_data is in JSON format
@@ -27,7 +28,7 @@ def plot_dashboard(serialized_data, user_accounts):
         df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
 
     # Debug: Print DataFrame info
-    print(df.info())
+    # print(df.info())
     # df.to_csv('df_main.cav')
     df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
 
@@ -41,7 +42,7 @@ def plot_dashboard(serialized_data, user_accounts):
                     dcc.Dropdown(
                         id="product",
                         # options=[{"label": i, "value": i} for i in sorted(df["Product"].unique())],
-                        options=[{"label": i, "value": i} for i in sorted(filter(lambda x: x is not None, df["Product"].unique()))],
+                        options=[{"label": i, "value": i} for i in sorted(filter(lambda x: x is not None, df[df['Competitor'] == False]["Product"].unique()))],
                         value=None,
                         multi=False
                     ),
@@ -99,6 +100,9 @@ def plot_dashboard(serialized_data, user_accounts):
                         dcc.Graph(id="line"),
                     ]),
                 ], className='card-body p-3'),
+                    html.Div([
+                        dcc.Graph(id="competitor-graph", style={"display": "none"}),  # Secondary graph
+                    ], className='card-body p-3'),
             ], className='container-fluid'),
         ], className='container-fluid'
     )
@@ -114,14 +118,32 @@ def plot_dashboard(serialized_data, user_accounts):
             return {'display': 'block'}, {'display': 'block'}  # Show overlay dropdown and header
         return {'display': 'none'}, {'display': 'none'}  # Hide overlay dropdown and header
 
+    # @app.callback(
+    #     Output("line", "figure"),
+    #     Input("product", "value"),
+    #     Input("period", "value"),
+    #     Input("account", "value"),
+    #     Input("plot-types", "value"),
+    #     Input("advanced-overlay", "value")  # Added advanced overlay input
+    # )
+
     @app.callback(
-        Output("line", "figure"),
+    [
+        Output("line", "figure"),  # Primary graph
+        Output("competitor-graph", "figure"),  # Secondary graph
+        Output("competitor-graph", "style"),  # Secondary graph visibility
+    ],
+    [
         Input("product", "value"),
         Input("period", "value"),
         Input("account", "value"),
         Input("plot-types", "value"),
-        Input("advanced-overlay", "value")  # Added advanced overlay input
-    )
+        Input("advanced-overlay", "value")  # Advanced overlay input
+    ]
+)
+
+
+
     def update_line_chart(product, period, selected_accounts, plot_types, advanced_overlay):
         # Initial debug statement to confirm callback input values
         # print(f"Product: {product}, Period: {period}, Accounts: {selected_accounts}, Plot Type: {plot_types}, Overlay: {advanced_overlay}")
@@ -160,6 +182,13 @@ def plot_dashboard(serialized_data, user_accounts):
 
             # print("Categories:", df_product['Category'].unique())
             # print("Subcategories:", df_product['Subcategory'].unique())
+
+            # Create competitor_df based on the filtered categories and subcategories for Competitor == True
+            competitor_df = df_copy[
+                (df_copy['Competitor'] == True) & 
+                (df_copy['Category'].isin(categories) | df_copy['Subcategory'].isin(subcategories))
+            ]
+            competitor_df = competitor_df.sort_values(by=['Product', 'scraped_at'], ascending=[True, False])
 
             # Filter bulk_df where key_name matches any Category or Subcategory in df_product
             bulk_df = df_copy[df_copy["key_name"].isin(categories + subcategories)]
@@ -219,6 +248,7 @@ def plot_dashboard(serialized_data, user_accounts):
 
             # Filter by date range and clean up data
             dff = dff[(dff['scraped_at'] >= start_date) & (dff['scraped_at'] <= end_date)]
+            competitor_df = competitor_df[(competitor_df['scraped_at'] >= start_date) & (competitor_df['scraped_at'] <= end_date)]
             # prepare the Bulk_df for category and subcategory
             category_df = bulk_df[bulk_df['key_name'].isin(categories)]
             category_df = category_df[(category_df['scraped_at'] >= start_date) & (category_df['scraped_at'] <= end_date)]
@@ -234,17 +264,17 @@ def plot_dashboard(serialized_data, user_accounts):
 
             # Monthly aggregation for yearly data
             elif period == "last_year":
-                for dataframe in [dff, category_df, subcategory_df]:
+                for dataframe in [dff, category_df, subcategory_df, competitor_df]:
                     dataframe['agregated_time'] = dataframe['scraped_at'].dt.to_period("M").astype(str)
 
             # Monthly aggregation for yearly data starts from January (YTY)
             elif period == "ytd":
-                for dataframe in [dff, category_df, subcategory_df]:
+                for dataframe in [dff, category_df, subcategory_df, competitor_df]:
                     dataframe['agregated_time'] = dataframe['scraped_at'].dt.to_period('M').astype(str)
 
             else:
                 # For other periods, floor the date by the selected interval
-                for dataframe in [dff, category_df, subcategory_df]:
+                for dataframe in [dff, category_df, subcategory_df, competitor_df]:
                     dataframe['agregated_time'] = dataframe['scraped_at'].dt.floor(floor_interval)
 
             # Group by the aggregated time and calculate the mean
@@ -268,6 +298,10 @@ def plot_dashboard(serialized_data, user_accounts):
 
         
         fig = go.Figure()
+        competitor_fig = go.Figure()
+        competitor_style = {"display": "none"}  # Hide secondary graph by default
+
+        
 
         # Acount Price 
         if plot_types == 'account_prices':
@@ -365,6 +399,51 @@ def plot_dashboard(serialized_data, user_accounts):
                     yaxis="y2"  # Assigning this trace to the secondary y-axis
                 ))
 
+            # Check if advanced overlay is set to "competitor"
+            if advanced_overlay and 'competitor' in advanced_overlay:
+                for account in selected_accounts:
+                    account_price_column = f"{account}_price"
+
+                    # Add 'Product' as a column instead of an index
+                    competitor_df_grouped = competitor_df.groupby('Product').agg(
+                        avg_price=(account_price_column, 'mean'),
+                    )
+                    competitor_df_grouped = competitor_df_grouped.sort_values(by='avg_price', ascending=False)
+                    competitor_df_grouped = competitor_df_grouped.reset_index()  # Reset index to make 'Product' a column
+
+
+                    # Calculate dynamic height for the chart
+                    chart_height = max(400, len(competitor_df_grouped) * 30)  # Minimum 400px, 30px per bar
+                    # Create secondary figure for competitor analysis
+                    competitor_fig.add_trace(go.Bar(
+                        y=[label[:20] + "..." if len(label) > 20 else label for label in competitor_df_grouped['Product']],
+                        x=competitor_df_grouped['avg_price'],
+                        orientation='h',
+                        name= f'Average Price per Competitors for {account}',
+                        # marker=dict(color='rgba(255, 99, 71, 0.6)'),
+                        hovertext=competitor_df_grouped['Product'],  # Full product name for hover
+                        hoverinfo="text+x"  # Display both the hovertext and x-value
+
+                    ))
+
+                    competitor_fig.update_layout(
+                        title={
+                        'text': "Average Price Per Competitors",
+                        'y': 0.9,
+                        'x': 0.5,
+                        'xanchor': 'center',
+                        'yanchor': 'top'
+                    },
+
+                        xaxis_title="Price SAR",
+                        yaxis_title="Products",
+                        template="plotly_white",
+                        height=chart_height
+                    )
+
+                    # Make the secondary graph visible
+                    competitor_style = {"display": "block"}
+
             # Update layout to include secondary y-axis
             fig.update_layout(
                 xaxis_title="Days",
@@ -454,6 +533,7 @@ def plot_dashboard(serialized_data, user_accounts):
                         ))
                     else:
                         print(f"No data found for subcategory overlay.")
+
             # Check if advanced overlay is set to "subcategory"
             if advanced_overlay and 'subcategory' in advanced_overlay:
                 for account in selected_accounts:
@@ -484,6 +564,52 @@ def plot_dashboard(serialized_data, user_accounts):
                     yaxis="y2"  # Assigning this trace to the secondary y-axis
                 ))
 
+            # Check if advanced overlay is set to "competitor"
+            if advanced_overlay and 'competitor' in advanced_overlay:
+                for account in selected_accounts:
+                    account_discount_column = f"{account}_discount"
+
+                    # Add 'Product' as a column instead of an index
+                    competitor_df_grouped = competitor_df.groupby('Product').agg(
+                        avg_promo=(account_discount_column, 'mean'),
+                    )
+                    competitor_df_grouped = competitor_df_grouped.sort_values(by='avg_promo', ascending=False)
+                    competitor_df_grouped = competitor_df_grouped.reset_index()  # Reset index to make 'Product' a column
+
+
+                    # Calculate dynamic height for the chart
+                    chart_height = max(400, len(competitor_df_grouped) * 30)  # Minimum 400px, 30px per bar
+                    # Create secondary figure for competitor analysis
+                    competitor_fig.add_trace(go.Bar(
+                        y=[label[:20] + "..." if len(label) > 20 else label for label in competitor_df_grouped['Product']],
+                        x=competitor_df_grouped['avg_promo'],
+                        orientation='h',
+                        name= f'Average Promo per Competitors for {account}',
+                        # marker=dict(color='rgba(255, 99, 71, 0.6)'),
+                        hovertext=competitor_df_grouped['Product'],  # Full product name for hover
+                        hoverinfo="text+x"  # Display both the hovertext and x-value
+
+                    ))
+
+                    competitor_fig.update_layout(
+                        title={
+                        'text': "Average Promo Per Competitors",
+                        'y': 0.9,
+                        'x': 0.5,
+                        'xanchor': 'center',
+                        'yanchor': 'top'
+                    },
+
+                        xaxis_title="Discount Percent",
+                        yaxis_title="Products",
+                        template="plotly_white",
+                        height=chart_height
+                    )
+
+                    # Make the secondary graph visible
+                    competitor_style = {"display": "block"}
+
+
             # Update layout to include secondary y-axis
             fig.update_layout(
                 xaxis_title="Days",
@@ -511,28 +637,23 @@ def plot_dashboard(serialized_data, user_accounts):
                 )
             )
 
-        # Market Share
+        # Market Share 
         if plot_types == 'market_share':
 
-            # Step 1: Shift 'nahdi_ordered_qty' by -1 within each product group
+            # Step 1: Shift 'nahdi_ordered_qty' by 1 within each product group
             grouped_df['order_bfr'] = grouped_df['nahdi_ordered_qty'].shift(+1)
 
             # Step 2: Calculate 'ordered_qty' as the difference between current and previous order quantity
-            grouped_df['ordered_qty'] = grouped_df['nahdi_ordered_qty'] - grouped_df['order_bfr']
+            grouped_df['ordered_qty'] = grouped_df['nahdi_ordered_qty'] -  grouped_df['order_bfr'] 
             # grouped_df.to_csv('dff_calc.csv')
-
-
-
-            # Step 5: Plot the 'total_qty' as a bar chart based on 'aggregated_time'
             fig.add_trace(go.Bar(
-                x=grouped_df['agregated_time'],
-                y=grouped_df['ordered_qty'],
-                name='Total Order Quantity',
-                # width=bar_width,
-            ))
+            x=grouped_df['agregated_time'],
+            y=grouped_df['ordered_qty'],
+            name='Total Order Quantity'
+        ))
 
-            # Check if advanced overlay is set to "OPPS"
-            if advanced_overlay and 'OPPS' in advanced_overlay:
+            # Add OPPS line if selected
+            if advanced_overlay and 'OPPS' in advanced_overlay :
                 fig.add_trace(go.Scatter(
                     x=grouped_df['agregated_time'],
                     y=grouped_df['opps'],
@@ -542,7 +663,6 @@ def plot_dashboard(serialized_data, user_accounts):
                     yaxis="y2"  # Assigning this trace to the secondary y-axis
                 ))
 
-            # Update layout to include secondary y-axis
             fig.update_layout(
                 xaxis_title="Days",
                 yaxis_title="Unit Solds",  # Primary y-axis title
@@ -553,7 +673,7 @@ def plot_dashboard(serialized_data, user_accounts):
                     showgrid=False  # Optionally hide grid lines for the secondary axis
                 ),
                 title={
-                    'text': "Market Share Analysis: Order Quantity",
+                    'text': "Market Share Analysis: Order Quantity Per Selected Period",
                     'y': 0.9,
                     'x': 0.5,
                     'xanchor': 'center',
@@ -566,14 +686,175 @@ def plot_dashboard(serialized_data, user_accounts):
                     y=1.02,
                     xanchor="right",
                     x=1
+
                 )
             )
 
+            
+            if advanced_overlay and 'competitor' in advanced_overlay:
+                # Add 'Product' as a column instead of an index
+                competitor_df_grouped = competitor_df.groupby('Product').agg(
+                    max_ordered_qty=('nahdi_ordered_qty', 'max'),
+                    min_ordered_qty=('nahdi_ordered_qty', 'min')
+                )
+                competitor_df_grouped['unit_sold'] = competitor_df_grouped['max_ordered_qty'] - competitor_df_grouped['min_ordered_qty']
+                competitor_df_grouped = competitor_df_grouped.sort_values(by='unit_sold', ascending=False)
+                competitor_df_grouped = competitor_df_grouped.reset_index()  # Reset index to make 'Product' a column
+
+                # Similarly for product_grouped
+                product_grouped = dff.groupby('Product').agg(
+                    max_ordered_qty=('nahdi_ordered_qty', 'max'),
+                    min_ordered_qty=('nahdi_ordered_qty', 'min')
+                )
+                product_grouped['unit_sold'] = product_grouped['max_ordered_qty'] - product_grouped['min_ordered_qty']
+                product_grouped = product_grouped.reset_index()  # Reset index to make 'Product' a column
+
+                # Concatenate the two DataFrames
+                combined_df = pd.concat([product_grouped, competitor_df_grouped], ignore_index=True)
+                # combined_df.to_csv('combined_df.csv')
+                # dff.to_csv('dff.csv')
+                # product_grouped.to_csv('product_grouped.csv')
+                # Calculate dynamic height for the chart
+                chart_height = max(400, len(combined_df) * 30)  # Minimum 400px, 30px per bar
+                # Create secondary figure for competitor analysis
+                competitor_fig.add_trace(go.Bar(
+                    y=[label[:20] + "..." if len(label) > 20 else label for label in combined_df['Product']],
+                    x=combined_df['unit_sold'],
+                    orientation='h',
+                    name='Unit Sold per Competitor',
+                    marker=dict(color='rgba(255, 99, 71, 0.6)'),
+                    hovertext=combined_df['Product'],  # Full product name for hover
+                    hoverinfo="text+x"  # Display both the hovertext and x-value
+
+                ))
+
+                competitor_fig.update_layout(
+                    title={
+                    'text': "Market Share Analysis",
+                    'y': 0.9,
+                    'x': 0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top'
+                },
+
+                    xaxis_title="Unit Sold",
+                    yaxis_title="Products",
+                    template="plotly_white",
+                    height=chart_height
+                )
+
+                # Make the secondary graph visible
+                competitor_style = {"display": "block"}
 
 
+            if advanced_overlay and 'category' in advanced_overlay:
+                # Add 'Product' as a column instead of an index
+                competitor_df_grouped = category_df.groupby('nahdi_title').agg(
+                    max_ordered_qty=('nahdi_ordered_qty', 'max'),
+                    min_ordered_qty=('nahdi_ordered_qty', 'min')
+                )
+                competitor_df_grouped['unit_sold'] = competitor_df_grouped['max_ordered_qty'] - competitor_df_grouped['min_ordered_qty']
+                competitor_df_grouped = competitor_df_grouped.sort_values(by='unit_sold', ascending=False)
+                competitor_df_grouped = competitor_df_grouped.reset_index()  # Reset index to make 'Product' a column
+                # Calculate dynamic height for the chart
+                chart_height = max(400, len(competitor_df_grouped) * 30)  # Minimum 400px, 30px per bar
+                
+                # Create unique y labels to handle duplicate initial characters
+                competitor_df_grouped['unique_label'] = [
+                    f"{label[:20]}... ({i})" if len(label) > 20 else f"{label} ({i})"
+                    for i, label in enumerate(competitor_df_grouped['nahdi_title'], start=1)
+                ]
 
 
-        return fig
+                # Create secondary figure for competitor analysis
+                competitor_fig.add_trace(go.Bar(
+                    y=competitor_df_grouped['unique_label'],  # Use unique y labels
+                    x=competitor_df_grouped['unit_sold'],
+                    orientation='h',
+                    name=f'Unit Sold per Category {categories}',
+                    marker=dict(
+                        color='rgba(75, 192, 192, 0.6)',  # Alternate color
+                    ),
+                    hovertext=competitor_df_grouped['nahdi_title'],  # Full product name for hover
+                    hoverinfo="text+x"  # Display both the hovertext and x-value
+
+                ))
+
+                competitor_fig.update_layout(
+                    title={
+                        'text': "Market Share Analysis",
+                        'y': 0.9,
+                        'x': 0.5,
+                        'xanchor': 'center',
+                        'yanchor': 'top'
+                    },
+                    xaxis_title="Unit Sold",
+                    yaxis_title="Products",
+                    yaxis=dict(
+                        showticklabels=False,  # Hide y-axis tick labels
+                        showgrid=False  # Hide grid lines for y-axis
+                    ),
+                    template="plotly_white",
+                    height=chart_height,  # Set dynamic height
+                )
+
+                # Make the secondary graph visible
+                competitor_style = {"display": "block"}
+
+
+            if advanced_overlay and 'subcategory' in advanced_overlay:
+                # Add 'Product' as a column instead of an index
+                competitor_df_grouped = subcategory_df.groupby('nahdi_title').agg(
+                    max_ordered_qty=('nahdi_ordered_qty', 'max'),
+                    min_ordered_qty=('nahdi_ordered_qty', 'min')
+                )
+                competitor_df_grouped['unit_sold'] = competitor_df_grouped['max_ordered_qty'] - competitor_df_grouped['min_ordered_qty']
+                competitor_df_grouped = competitor_df_grouped.sort_values(by='unit_sold', ascending=False)
+                competitor_df_grouped = competitor_df_grouped.reset_index()  # Reset index to make 'Product' a column
+
+                # Calculate dynamic height for the chart
+                chart_height = max(400, len(competitor_df_grouped) * 30)  # Minimum 400px, 30px per bar
+                                # Create unique y labels to handle duplicate initial characters
+                competitor_df_grouped['unique_label'] = [
+                    f"{label[:20]}... ({i})" if len(label) > 20 else f"{label} ({i})"
+                    for i, label in enumerate(competitor_df_grouped['nahdi_title'], start=1)
+                ]
+
+                # Create secondary figure for competitor analysis
+                competitor_fig.add_trace(go.Bar(
+                    y=competitor_df_grouped['unique_label'],  # Use unique y labels
+                    x=competitor_df_grouped['unit_sold'],
+                    orientation='h',
+                    name=f'Unit Sold per Subcategory {subcategories}',
+                    marker=dict(color='rgba(153, 102, 255, 0.6)'),
+                    hovertext=competitor_df_grouped['nahdi_title'],  # Full product name for hover
+                    hoverinfo="text+x"  # Display both the hovertext and x-value
+
+                ))
+
+                competitor_fig.update_layout(
+                    title={
+                    'text': "Market Share Analysis",
+                    'y': 0.9,
+                    'x': 0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top'
+                },
+
+                    xaxis_title="Unit Sold",
+                    yaxis_title="Products",
+                    yaxis=dict(
+                        showticklabels=False,  # Hide y-axis tick labels
+                        showgrid=False  # Hide grid lines for y-axis
+                    ),                    template="plotly_white",
+                    height=chart_height
+                )
+
+                # Make the secondary graph visible
+                competitor_style = {"display": "block"}
+
+
+        return fig, competitor_fig, competitor_style
 
     return app
 

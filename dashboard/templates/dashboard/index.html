@@ -198,101 +198,45 @@
       <div class="collapse" id="collapseExample">
         {% for pinned_table in pinned_tables %}
 
-          {% if pinned_table.table_name == 'PerformanceData' %}
-            <h3>{{ pinned_table.table_name }}</h3>
-            <table id="PerformanceData" class="display">
-
-              <thead>
-              <tr>
-                <th>Product Title</th>
-                <th>Promo Flag</th>
-                <th>Final Price</th>
-                {% for column in columns %}
-                  {% if "_price" in column.name %}
-                    <th>{{ column.header }}</th>
-                  {% endif %}
-                {% endfor %}
-          
-                {% if show_amazon_sold_by %}
-                <th>Amazon Sold By</th>
-                {% endif %}
-          
-                <th>Amazon Ratio</th>
-                <th>Dawa Ratio</th>
-                <th>Nahdi Ratio</th>
-          
-                <th>PCS</th>
-                <th>PDS</th>
-                <th>OPPS</th>
-                <th>Update at</th>
-          
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in scraped_data %}
-                <tr>
-                  <td>{{ row.product.TITLE }}</td>
-          
-                  <td class="align-middle text-center text-sm">
-                    {% if row.promo_flag %}
-                    <span class="badge badge-sm bg-gradient-success">ON</span>        
-                    {% else %}
-                    <span class="badge badge-sm bg-gradient-secondary">OFF</span>        
-                    {% endif %}
-                  </td>
-          
-          
-                  <td>{{ row.final_price|floatformat:2 }}</td>
-                  {% for column in columns %}
-                    {% if "_price" in column.name %}
-                      <td>
-                        {# Get the corresponding compliance flag dynamically using the custom replace filter #}
-                        {% with compliance_flag=column.name|replace:"price,compliance_flag" %}
-                          {% if row|get_item2:compliance_flag %}
-                            <span class="badge bg-success">{{ row|get_item2:column.name|default_if_none:"N/A" }}</span>
-                          {% else %}
-                            <span class="badge bg-danger">{{ row|get_item2:column.name|default_if_none:"N/A" }}</span>
-                          {% endif %}
-                        {% endwith %}
-                      </td>
-                    {% endif %}
-                  {% endfor %}
-          
-          
-          
-                  {% if show_amazon_sold_by %}
-                  <td class="text-center">
-                      {% if row.amazon_sold_by != "Amazon.sa" %}
-                          <span style="color: red;">{{ row.amazon_sold_by }}</span>
-                      {% else %}
-                          {{ row.amazon_sold_by }}
-                      {% endif %}
-                  </td>
-                  {% endif %}
-          
-                  <td>{{ row.amazon_ratio|floatformat:2|default:"N/A" }}</td>
-                  <td>{{ row.dawa_ratio|floatformat:2|default:"N/A" }}</td>
-                  <td>{{ row.nahdi_ratio|floatformat:2|default:"N/A" }}</td>
-          
-              
-                  <td>{{ row.pcs|floatformat:2 }}%</td>
-                  <td>{{ row.price_deviation_score|floatformat:2 }}%</td>
-                  <td>{{ row.opps|floatformat:2 }}%</td>        
-                  <td>{{ row.scraped_at|date:"F j, Y, g:i a"  }}</td>
-          
-                </tr>
-              {% endfor %}
-            </tbody>
-            </table>
-          {% endif %}
 
           {% if pinned_table.table_name == 'CurrentPriceStatus' %}
 
           <div class="row">
+
+            <script>
+              // Auto-dismiss alert after 5 seconds (5000 ms)
+              document.addEventListener("DOMContentLoaded", function () {
+                const alertElement = document.querySelector(".alert-dismissible");
+                if (alertElement) {
+                  setTimeout(() => {
+                    alertElement.classList.remove("show"); // Remove 'show' class
+                    alertElement.classList.add("fade");   // Optionally add 'fade' class for transition
+                    alertElement.style.display = "none";  // Hide the alert
+                  }, 5000); // 5000 ms = 5 seconds
+                }
+              });
+            </script>
+            
+           
+            <div class="container-fluid py-4">
+            
+              {% if messages %}
+              <div class="container mt-4">
+                {% for message in messages %}
+                  <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            
+            
             <div class="row mt-4">
               <h1>Current Price Status </h1>
             </div>
-        
+            
+            
             <div class="col-12">
               <div class="card">
                 <div class="card-header pb-0">
@@ -302,149 +246,156 @@
                         The table's last update was on <span style="font-weight: bold;" >{{ latest_scraped_date|date:"F j, Y, g:i a" }}</span>
                     </div>
                   </div>
-        
-                  <div class="row mt-4">
-                    <div class="container-fluid">
+                </div>
+            
+                <div class="card-body px-0 pb-2">
+            
+                  <div class="container-fluid">
+                    <div class="raw">
+            
                       <form action="{% url 'dashboard:trigger_scrape_for_user_products' %}" method="post">
                         {% csrf_token %}
                         <div class="d-grid gap-2">
                           <button class="btn btn-primary" type="submit">Update Price Now</button>
                         </div>
                       </form>
-                    </div>
-        
-                  </div>
-                <div class="card-body px-0 pb-2">
-                  <div class="table-responsive">
                     
-                    <table class="table align-items-center mb-0" id="CurrentPriceStatus" class="display">
-                      <thead>
-                        <tr>
-                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Product</th>
-                          <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">RSV|RSV+VAT</th>
-                          <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Reference Price</th>
-                          <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">On Promo</th>
-                          
-                          {% for column in columns %}
-                          {% if "_price" in column.name %}
-                            <th class="text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">{{ column.header }}</th>
-                          {% endif %}
-                        {% endfor %}
-                                
-                        <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">PDS</th> -->
-                      </tr>
-                      </thead>
-                        <tbody>
-                          {% for data in max_scraped_data  %}
-                          <tr>
-                              <td>
-                                  <div class="d-flex px-2 py-1">
-        
-                                  <div class="d-flex flex-column justify-content-center">
-                                  <h6 class="mb-0 text-sm">{{data.product.TITLE}}</h6>
-                              </div>
-                              </div>
-                              </td>
-                              <td class="align-middle text-center text-sm">
-                                <span class="text-xs font-weight-bold"> {{data.product.RSP|floatformat:"2"}}</span>
-                                <br>
-                                <span class="text-xs">{{ data.product.RSP_VAT|floatformat:"2" }}</span>
-                              </td>
-        
-                              <td class="align-middle text-center text-sm">
-                                <span class="text-xs font-weight-bold"> {{ data.final_price |floatformat:"2" }}</span>
-                              </td>
-        
-        
-                              <td class="align-middle text-center text-sm">
-        
-                                {% if data.promo_flag %}
-                                <span class="badge badge-sm bg-gradient-success">{{data.discount_percentage}}%</span>        
-        
-                                {% else %}
-                                <span class="badge badge-sm bg-gradient-secondary">OFF</span>        
-        
-                                {% endif %}
-                              </td>
-        
-                              {% for column in columns %}
-                              {% if "_price" in column.name %}
-                                <td class="align-middle text-center text-sm">
-                                  <div class="d-flex align-items-center justify-content-center">
-                                    {% with compliance_flag=column.name|replace:"price,compliance_flag" %}
-                                      {% if data|get_item2:compliance_flag %}
-                                        <span>{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
-                                      {% else %}
-                                        <span class="badge bg-danger">{{ data|get_item2:column.name|default_if_none:"N/A" }}</span>
-                                      {% endif %}
-                                      
-                                      {% if column.name == "amazon_price" and data.amazon_sold_by != "Amazon.sa" %}
-                                        <svg 
-                                          xmlns="http://www.w3.org/2000/svg" 
-                                          width="16" 
-                                          height="16" 
-                                          fill="red" 
-                                          class="bi bi-shop ms-2" 
-                                          viewBox="0 0 16 16"
-                                          data-bs-toggle="popover" 
-                                          data-bs-placement="right" 
-                                          data-bs-content="Sold by: {{ data.amazon_sold_by }}"
-                                          style="cursor: pointer;">
-                                          <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.37 2.37 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0M1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5M4 15h3v-5H4zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zm3 0h-2v3h2z"/>
-                                        </svg>
-        
-                                      {% endif %}
-                                      
-                                    {% endwith %}
-                                  </div>
-                                </td>
-                              {% endif %}
-                            {% endfor %}
-                                                                                                    
-                              <!-- <td class="align-middle text-center text-sm">
-                                <div class="progress-wrapper w-75 mx-auto">
-                                  <div class="progress-info">
-                                  <div class="progress-percentage">
-                                  <span class="text-xs font-weight-bold">{{data.price_deviation_score|floatformat:"2"}}%</span>
-                                  </div>
-                                  </div>
-                                  <div class="progress">
-                                  <div class="progress-bar bg-gradient-info w-20" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                              </td> -->
-                              
-                          </tr>
-                            {% endfor %}
-        
-                        </tbody>
-                    </table>
-        
-        
+                    </div>
                   </div>
+                  
+                  <div class="container-fluid">
+                    <div class="raw">
+                  <!-- Product and Column Selection Form -->
+                  <div class="d-grid gap-2">
+            
+                  <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                    Filter Prodcuts and columns 
+                  </button>
+                  </div>
+            
+                  <div class="collapse" id="collapseExample">
+                  
+                  <form method="get" id="filter-form" class="mb-4">
+                    <div class="row g-3">
+                        <!-- Product Dropdown -->
+                        <div class="col-md-6">
+                            <label for="products" class="form-label fw-bold">Select Products:</label>
+                            <select id="products" name="products" class="form-select" multiple>
+                                {% for product in all_products %}
+                                    <option value="{{ product.id }}" {% if product.id|stringformat:"s" in selected_product_ids %}selected{% endif %}>
+                                        {{ product.TITLE }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple products.</small>
+                        </div>
+                  
+                        <!-- Columns Checkbox Dropdown -->
+                        <div class="col-md-6">
+                          <label for="columns">Select Columns to Display:</label><br>
+                          {% for column in columns %}
+                              <input type="checkbox" name="columns" value="{{ column.name }}" id="{{ column.name }}"
+                                    {% if column.name in selected_columns %}checked{% endif %}>
+                              <label for="{{ column.name }}">{{ column.header }}</label><br>
+                          {% endfor %}
+                        </div>
+            
+            
+                        
+                    </div>
+                  
+                    <!-- Submit Button -->
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success w-100">Apply Filters</button>
+                    </div>
+                  </form>
+                  
+                  </div>
+                    
+                    </div>
+                  </div>
+                  
+                  <div class="card-body px-0 pb-2">
+                      <div class="table-responsive">
+                          <!-- Product Table -->
+                          <table class="table align-items-center mb-0" id="CurrentPriceStatus" class="display">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Product</th>
+                                    {% for column in columns %}
+                                        <th class="text-center">{{ column.header }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in max_scraped_data %}
+                                    <tr>
+                                        <td>{{ data.product.TITLE }}</td>
+                                        {% for column in columns %}
+                                            <td class="text-center">
+                                                {% if "_price" in column.name or "_discount" in column.name %}
+                                                    {{ data|get_item2:column.name|default_if_none:"N/A" }}
+                                                {% elif "_compliance_flag" in column.name %}
+                                                    {% if data|get_item2:column.name %}
+                                                        <span class="badge bg-success">Compliant</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Non-Compliant</span>
+                                                    {% endif %}
+                          
+                                                {% elif "promo_flag" in column.name %}
+                                                  {% if data.promo_flag %}
+                                                    <span class="badge badge-sm bg-gradient-success">{{data.discount_percentage}}%</span>        
+                          
+                                                    {% else %}
+                                                    <span class="badge badge-sm bg-gradient-secondary">OFF</span>        
+                                                    {% endif %}
+                            
+                                                {% elif "RSP" in column.name %}
+                                                    {{ data.product.RSP|floatformat:"2" }}
+                          
+                                                {% elif "final_price" in column.name %}
+                                                    {{ data.product.final_price|floatformat:"2" }}
+                          
+                                                {% elif "amazon_sold_by" in column.name %}
+                                                  {{ data.amazon_sold_by }}
+                          
+                                                {% elif "noon_sa_sold_by" in column.name %}
+                                                  {{ data.noon_sa_sold_by }}
+                          
+                                                {% elif "opps" in column.name %}
+                                                  {{ data.opps|floatformat:"2" }}
+                          
+                                                {% elif "price_deviation_score" in column.name %}
+                                                  {{ data.price_deviation_score|floatformat:"2" }}                        
+                                                {% elif "account_deviation_score" in column.name %}
+                                                  {{ data.account_deviation_score|floatformat:"2" }}                        
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                          </table>
+                      </div>
+                  </div>
+                  
+                  <div class="col p-4">
+                    <a href="{% url 'dashboard:toggle_pin_table' 'CurrentPriceStatus' %}" >
+                        {% if is_table_pinned %}
+                            Unpin Table
+                        {% else %}
+                            Pin Table
+                        {% endif %}
+                    </a>
+                  </div>
+            
                 </div>
-        
-                <!-- Rounded switch -->
-                <!-- <div class="col p-4">
-                  <label class="switch">
-                    <input type="checkbox">
-                    <span class="slider round"></span>
-                  </label>
-                </div>   -->
-                <div class="col p-4">
-                  <a href="{% url 'dashboard:toggle_pin_table' 'CurrentPriceStatus' %}" >
-                      {% if is_table_pinned %}
-                          Unpin Table
-                      {% else %}
-                          Pin Table
-                      {% endif %}
-                  </a>
-                </div>
-              
               </div>
-        
             </div>
-          </div>
-        
+            
+            
+            </div>
+                    
         
         
             

@@ -188,6 +188,15 @@ class ScrapedData(models.Model):
     #     return calculate_price_discount(self.noon_sa_price, self.noon_sa_original_price)
 
 
+    @cached_property
+    def noon_sa_compliance_score(self):
+        if self.final_price is None or self.noon_sa_price is None:
+            return False
+        
+        abs_diff = abs(self.final_price-self.noon_sa_price)
+        complience_score = (1-(abs_diff/(0.5*self.final_price)))
+
+        return complience_score
 
 
     def calculate_compliance_flag(self, price):
@@ -271,7 +280,8 @@ class ScrapedData(models.Model):
         compliance_scores = [
             self.amazon_compliance_score,
             self.dawa_compliance_score,
-            self.nahdi_compliance_score
+            self.nahdi_compliance_score,
+            self.noon_sa_compliance_score
         ]
         
         # Filter out None values and calculate the average
@@ -343,6 +353,7 @@ class ScrapedData(models.Model):
             f"Amazon Compliance Score: {self.amazon_compliance_score:.2f}" if self.amazon_compliance_score is not None else "Amazon Compliance Score: N/A",
             f"Dawa Compliance Score: {self.dawa_compliance_score:.2f}" if self.dawa_compliance_score is not None else "Dawa Compliance Score: N/A",
             f"Nahdi Compliance Sccore: {self.nahdi_compliance_score:.2f}" if self.nahdi_compliance_score is not None else "Nahdi Compliance Score: N/A",
+            f"Noon Compliance Sccore: {self.noon_sa_compliance_score:.2f}" if self.noon_sa_compliance_score is not None else "Noon Compliance Score: N/A",
             f"Price Compliance Score: {self.pcs:.2f}%",
             f"ADS: {self.account_deviation_score:.2f} " if self.account_deviation_score is not None else "ADS: N/A"
             f"Online Price Performance Score: {self.opps:.2f}%"
