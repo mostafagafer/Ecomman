@@ -73,11 +73,17 @@ class ScrapedData(models.Model):
         ).first()
         return promo_plan.discount_percentage if promo_plan else 0
 
+    # @cached_property
+    # def final_price(self):
+    #     rsp_vat = self.product.RSP_VAT
+    #     discount = self.discount_percentage / 100
+    #     return rsp_vat - (discount * rsp_vat)
     @cached_property
     def final_price(self):
         rsp_vat = self.product.RSP_VAT
-        discount = self.discount_percentage / 100
-        return rsp_vat - (discount * rsp_vat)
+        discount = self.discount_percentage / 100 if self.discount_percentage is not None else None
+        return rsp_vat - (discount * rsp_vat) if rsp_vat is not None and discount is not None else None
+
 
 
 
@@ -240,24 +246,42 @@ class ScrapedData(models.Model):
         return self.calculate_compliance_flag(self.noon_sa_price)
 
 
+    # @cached_property
+    # def price_deviation_score(self):
+    #     store_prices = [self.amazon_price, self.dawa_price, self.nahdi_price, self.noon_sa_price]
+    #     store_prices = [price for price in store_prices if price is not None]
+        
+    #     if not store_prices or self.final_price == 0:
+    #         return 0
+        
+    #     average_deviation = sum(abs(price - self.final_price) for price in store_prices) / len(store_prices)
+
+    #     # Old PDS 
+    #     # pds = (1 - (average_deviation / self.final_price)) * 100
+        
+    #     # New PDS as per mahmoud 19oct/2024
+    #     pds = (average_deviation / self.final_price)*100
+
+    #     return pds
+
     @cached_property
     def price_deviation_score(self):
         store_prices = [self.amazon_price, self.dawa_price, self.nahdi_price, self.noon_sa_price]
         store_prices = [price for price in store_prices if price is not None]
         
-        if not store_prices or self.final_price == 0:
-            return 0
+        # Ensure that final_price is not None or 0
+        if not store_prices or self.final_price is None or self.final_price == 0:
+            return None  # Or return 0 if you prefer a numeric result instead of None
         
+        # Calculate average deviation
         average_deviation = sum(abs(price - self.final_price) for price in store_prices) / len(store_prices)
 
-        # Old PDS 
-        # pds = (1 - (average_deviation / self.final_price)) * 100
-        
-        # New PDS as per mahmoud 19oct/2024
-        pds = (average_deviation / self.final_price)*100
+        # Calculate Price Deviation Score (PDS)
+        pds = (average_deviation / self.final_price) * 100
 
         return pds
-    
+
+
     @cached_property
     def pcs(self):
         total_stores = sum(1 for price in [self.amazon_price, 
@@ -291,15 +315,19 @@ class ScrapedData(models.Model):
             return (sum(valid_scores) / len(valid_scores))*100
         return None  # Return None if no valid scores
 
-    @cached_property
-    def opps(self):
+    # @cached_property
+    # def opps(self):
 
-        # old opps
-        # opps = (self.price_deviation_score+self.pcs)/2
-        # New opps
-        opps = ((100-self.price_deviation_score)+self.account_deviation_score)/2
-        return opps
+    #     # old opps
+    #     # opps = (self.price_deviation_score+self.pcs)/2
+    #     # New opps
+    #     opps = ((100-self.price_deviation_score)+self.account_deviation_score)/2
+    #     return opps
         
+    def opps(self):
+        price_deviation_score = self.price_deviation_score if self.price_deviation_score is not None else None
+        account_deviation_score = self.account_deviation_score if self.account_deviation_score is not None else None
+        return ((100 - price_deviation_score) + account_deviation_score) / 2 if price_deviation_score is not None and account_deviation_score is not None else None
 
     def __str__(self):
         # Gather all details in a list for clarity and manage None cases directly within formatting
@@ -342,7 +370,7 @@ class ScrapedData(models.Model):
             f"Promo Flag: {'Yes' if self.promo_flag else 'No'}",
             f"Discount Percentage: {self.discount_percentage:.2f}%",
             f"Final Price: {self.final_price:.2f}" if self.final_price else "Final Price: None",
-            f"Price Deviation Score: {self.price_deviation_score:.2f}",
+            f"Price Deviation Score: {self.price_deviation_score:.2f}" if self.price_deviation_score is not None else "Price Deviation Score: N/A",
             f"Amazon Compliance Flag: {'Yes' if self.amazon_compliance_flag else 'No'}",
             f"Dawa Compliance Flag: {'Yes' if self.dawa_compliance_flag else 'No'}",
             f"Nahdi Compliance Flag: {'Yes' if self.nahdi_compliance_flag else 'No'}",

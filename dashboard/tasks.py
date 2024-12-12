@@ -48,12 +48,51 @@ def caching_data():
 
 
 # Trigerred tasks
+# @shared_task
+# def cache_user_data(user_id):
+#     """
+#     Task to pre-cache data for a specific user.
+#     """
+#     from django.contrib.auth.models import User
+#     try:
+#         user = User.objects.get(id=user_id)
+#         profile = Profile.objects.get(user=user)
+
+#         # Get user's products
+#         user_products = profile.products.prefetch_related(
+#             'accounts_id', 'brand', 'category', 'subcategory'
+#         ).select_related('brand', 'category', 'subcategory')
+
+#         # Fetch `scraped_data` and `scraped_bulk_data`
+#         scraped_data = ScrapedData.objects.filter(
+#             product__in=user_products
+#         ).select_related('product')
+
+#         categories = user_products.values_list('category__name', flat=True).distinct()
+#         subcategories = user_products.values_list('subcategory__name', flat=True).distinct()
+#         scraped_bulk_data = ScrapedBulkData.objects.filter(
+#             key_name__in=list(categories) + list(subcategories)
+#         )
+
+#         # Process and cache data
+#         cache_key = f'dashboard_data_{user.id}'
+#         data = process_data(scraped_data, scraped_bulk_data)
+#         serialized_data = json.dumps(data)
+#         cache.set(cache_key, serialized_data, timeout=86400.0)  # Cache for 24 hours
+#         return f"Cached data for user {user.username}."
+#     except Exception as e:
+#         return f"Error caching data for user {user_id}: {str(e)}"
+
+
 @shared_task
 def cache_user_data(user_id):
     """
     Task to pre-cache data for a specific user.
     """
     from django.contrib.auth.models import User
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         user = User.objects.get(id=user_id)
         profile = Profile.objects.get(user=user)
@@ -74,11 +113,20 @@ def cache_user_data(user_id):
             key_name__in=list(categories) + list(subcategories)
         )
 
+        # Debug: Log input data counts
+        logger.info(f"User {user_id}: {scraped_data.count()} scraped_data, {scraped_bulk_data.count()} scraped_bulk_data")
+
         # Process and cache data
         cache_key = f'dashboard_data_{user.id}'
-        data = process_data(scraped_data, scraped_bulk_data)
+        try:
+            data = process_data(scraped_data, scraped_bulk_data)
+        except Exception as process_error:
+            logger.error(f"Error in process_data for user {user_id}: {process_error}")
+            raise
+
         serialized_data = json.dumps(data)
         cache.set(cache_key, serialized_data, timeout=86400.0)  # Cache for 24 hours
         return f"Cached data for user {user.username}."
     except Exception as e:
+        logger.error(f"Error caching data for user {user_id}: {str(e)}")
         return f"Error caching data for user {user_id}: {str(e)}"

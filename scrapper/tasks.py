@@ -144,7 +144,7 @@ def scheduled_products_scraper(sample_size=50):
             availability_amazon = amazon_availability[0] if amazon_availability else None
             discount_amazon = amazon_discount[0] if amazon_discount else None
             sold_count_amazon = amazon_sold_count[0] if amazon_sold_count else None
-            amazon_choice_badge = amazon_choice[0] if amazon_choice else None
+            amazon_choice_badge = bool(amazon_choice[0]) if amazon_choice else False
 
 
             # Assign extracted values for the first record
@@ -482,7 +482,7 @@ def scrape_user_products_task(product_ids):
             availability_amazon = amazon_availability[0] if amazon_availability else None
             discount_amazon = amazon_discount[0] if amazon_discount else None
             sold_count_amazon = amazon_sold_count[0] if amazon_sold_count else None
-            amazon_choice_badge = amazon_choice[0] if amazon_choice else None
+            amazon_choice_badge = bool(amazon_choice[0]) if amazon_choice else False
 
 
             # Assign extracted values for the first record

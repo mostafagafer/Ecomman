@@ -200,7 +200,7 @@ input:checked + .slider:before {
                             {% for column in columns %}
                                 <td class="text-center">
                                     {% if "_price" in column.name or "_discount" in column.name %}
-                                        {{ data|get_item2:column.name|default_if_none:"N/A" }}
+                                        {{ data|get_item2:column.name|floatformat:"2"|default_if_none:"N/A" }}
                                     {% elif "_compliance_flag" in column.name %}
                                         {% if data|get_item2:column.name %}
                                             <span class="badge bg-success">Compliant</span>

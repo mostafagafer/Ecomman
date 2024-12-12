@@ -6,12 +6,14 @@ venv/
 SourceData/
 XDocs/
 Xrequests_scripts/
+management/
 __pycache__
 .env
 celery_beat.log
 celerybeat-schedule.dir
 celerybeat-schedule.bak
 celerybeat-schedule.dat
+celery_worker.log
 test.py
 LesEtaps.txt
 .DS_Store

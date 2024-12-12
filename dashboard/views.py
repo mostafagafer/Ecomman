@@ -32,11 +32,11 @@ def scrape_user_products_view(request):
         product_ids = list(user_products.values_list('id', flat=True))
 
         # Trigger the Celery tasks
-        print('Scraping products for user...')
-        scrape_user_products_task.delay(product_ids)
+        # print('Scraping products for user...')
+        # scrape_user_products_task.delay(product_ids)
         
-        print('Scraping bulk products for user...')
-        scrape_user_Bulk_product_task.delay(product_ids)
+        # print('Scraping bulk products for user...')
+        # scrape_user_Bulk_product_task.delay(product_ids)
 
         print('Caching data for user...')
         cache_user_data.delay(request.user.id)
@@ -67,7 +67,7 @@ def dashboard_view(request):
         # Pass cached data directly to Plotly Dash
         profile = Profile.objects.get(user=request.user)
         account_names = list(
-            profile.products.values_list('accounts_id__name', flat=True).distinct()
+            profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
         )
         plot_dashboard(cached_data, account_names)
         context = {
@@ -222,7 +222,6 @@ def price(request):
 
         # Define dynamic columns based on user's accounts
         user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
-
         all_columns = []
         for account in user_accounts:
             account_lower = account.lower()
