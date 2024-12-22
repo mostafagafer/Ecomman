@@ -323,7 +323,8 @@ class ScrapedData(models.Model):
     #     # New opps
     #     opps = ((100-self.price_deviation_score)+self.account_deviation_score)/2
     #     return opps
-        
+
+    @cached_property
     def opps(self):
         price_deviation_score = self.price_deviation_score if self.price_deviation_score is not None else None
         account_deviation_score = self.account_deviation_score if self.account_deviation_score is not None else None

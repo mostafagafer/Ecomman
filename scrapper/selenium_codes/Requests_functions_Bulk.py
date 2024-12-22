@@ -8,6 +8,142 @@ import logging
 from scrapper.utils import parse_discount_from_text
 
 
+# old code changed in 22/12/2024
+# async def fetch_amazon_search_results(session, query, num_products):
+#     query_updated = query.replace(" ", "+")
+#     page = 1
+#     products = []    
+    
+#     base_url = 'https://www.amazon.sa/s'
+
+#     headers = {
+#         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+#         'accept-language': 'en-US,en;q=0.9,ar;q=0.8',
+#         'cookie': 'session-id=258-6012606-2561645; i18n-prefs=SAR; ubid-acbsa=257-1535786-5196730; lc-acbsa=en_AE; session-id-time=2082787201l; session-token=OpmNbjJzw5oWMMDfwOq6ulXjKxrI3t64CVz9/dipmaCv83rv32RxTrxJ9uKE6BXdOAA0frbGXAXS8mX4z+3YzarfFdo8MD7rHf++Jg229SzcD4XHiXdZge5veFvjgVR3xZwqxj/6x8wkGjppRbVcBlKrxkAiLN6lM485DXbMrga9Dlv9HV7Dq4y0DGXIi7WwTTvo200JvtMHFJ3h2zrRQNBWDAvitxJUu97phcXCfT/1q/dTN1Jwr0YsLKNDTVQhGIWkKMQrmQRow0OrbbcO/5tY6B46TzJViNN3ZURoCga8avivzCKTD6sTp8cURx8BwpYutiLMW4FiTqyEJZlVuGxdBw2AH7T7; csm-hit=tb:HKRBZ9MFZ0V9WEVSDK14+s-4K6Y2K7CBW55KR10YN9S|1727798078925&t:1727798078925&adb:adblk_yes',
+#         'device-memory': '8',
+#         'downlink': '10',
+#         'dpr': '0.6666666666666666',
+#         'ect': '4g',
+#         'priority': 'u=0, i',
+#         'rtt': '150',
+#         'sec-ch-device-memory': '8',
+#         'sec-ch-dpr': '0.6666666666666666',
+#         'sec-ch-ua': '"Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
+#         'sec-ch-ua-mobile': '?0',
+#         'sec-ch-ua-platform': '"Windows"',
+#         'sec-ch-ua-platform-version': '"10.0.0"',
+#         'sec-ch-viewport-width': '1007',
+#         'sec-fetch-dest': 'document',
+#         'sec-fetch-mode': 'navigate',
+#         'sec-fetch-site': 'none',
+#         'sec-fetch-user': '?1',
+#         'upgrade-insecure-requests': '1',
+#         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+#         'viewport-width': '1007',
+#     }
+
+#     while len(products) < num_products:
+#         params = {
+#             'k': query_updated,
+#             'page': page,
+#             'language': 'en'
+#         }
+        
+#         async with session.get(base_url, headers=headers, params=params) as response:
+#             content = await response.text()
+#             soup = BeautifulSoup(content, 'html.parser')
+            
+
+            
+#             # Find all product containers on the page
+#             product_elements = soup.select('.s-main-slot .s-result-item')
+#             products = []
+
+#             for product in product_elements:
+#                 # Try to get ASIN from data-asin, or retrieve it by inspecting attributes
+#                 asin = product.get('data-asin', None)
+#                 if not asin:
+#                     asin_tag = product.get('data-asin')
+#                     asin = asin_tag if asin_tag else None
+
+#                 # Check for the title element and extract it if present
+#                 title_element = product.select_one('h2 .a-text-normal')
+#                 if title_element:
+#                     title = title_element.get_text(strip=True)
+#                     print(f"Product Title: {title}")  # Print each title to the terminal
+
+#                     # Get the current price, convert to float
+#                     current_price_element = product.select_one('.a-row.a-size-base.a-color-base .a-price .a-offscreen')
+#                     current_price_text = current_price_element.get_text(strip=True) if current_price_element else None
+#                     current_price = float(re.sub(r'[^\d.]', '', current_price_text)) if current_price_text else None
+
+#                     # Get the original price (before discount), convert to float
+#                     original_price_element = product.select_one('.a-row.a-size-base.a-color-base .a-price.a-text-price .a-offscreen')
+#                     original_price_text = original_price_element.get_text(strip=True) if original_price_element else None
+#                     original_price = float(re.sub(r'[^\d.]', '', original_price_text)) if original_price_text else None
+
+#                     # Calculate the discount percentage if original price is available
+#                     amazon_discount = (100-(current_price / original_price * 100)) if current_price and original_price else None
+
+#                     # Extract purchase count text if available
+#                     purchase_count_element = product.select_one('span.a-size-base.a-color-secondary')
+#                     purchase_count_text = purchase_count_element.get_text(strip=True) if purchase_count_element else None
+
+#                     # Print ASIN, prices, discount, and purchase count to the terminal
+#                     print(f"ASIN: {asin}, Current Price: {current_price}, Original Price: {original_price}, "
+#                         f"Discount: {amazon_discount}, Purchase Count: {purchase_count_text}")
+
+#                     # Append the product data to the list
+#                     products.append({
+#                         'ASIN': asin,
+#                         'title': title,
+#                         'current_price': current_price,
+#                         'original_price': original_price,
+#                         'amazon_discount': amazon_discount,
+#                         'purchase_count': purchase_count_text
+#                     })
+
+                
+#                 # Stop if we've collected the desired number of products
+#                 if len(products) >= num_products:
+#                     break
+            
+#             page += 1
+
+#             # If no products found on the page, break to avoid infinite loop
+#             if not product_elements:
+#                 print("No more products found.")
+#                 break
+
+#     return products
+
+# async def get_amazon_details(amazon_queries, num_products):
+#     async with aiohttp.ClientSession() as session:
+#         # Create asynchronous tasks for each Amazon query
+#         tasks = [fetch_amazon_search_results(session, query, num_products) for query in amazon_queries]
+        
+#         # Gather responses for each query
+#         responses = await asyncio.gather(*tasks)
+        
+#         # Process and structure Amazon data
+#         all_amazon_data = []
+#         for response, query in zip(responses, amazon_queries):
+#             if response:  # Check if response contains data
+#                 for product in response:
+#                     all_amazon_data.append({
+#                         'ASIN': product.get('ASIN'),
+#                         'title': product.get('title'),
+#                         'current_price': product.get('current_price'),
+#                         'original_price': product.get('original_price'),
+#                         'amazon_discount': product.get('amazon_discount'),
+#                         'purchase_count': product.get('purchase_count'),
+#                         'key': query  # Store the query as 'key'
+#                     })
+        
+#         return all_amazon_data
+
+
+# new  code
 async def fetch_amazon_search_results(session, query, num_products):
     query_updated = query.replace(" ", "+")
     page = 1
@@ -16,29 +152,32 @@ async def fetch_amazon_search_results(session, query, num_products):
     base_url = 'https://www.amazon.sa/s'
 
     headers = {
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'accept-language': 'en-US,en;q=0.9,ar;q=0.8',
-        'cookie': 'session-id=258-6012606-2561645; i18n-prefs=SAR; ubid-acbsa=257-1535786-5196730; lc-acbsa=en_AE; session-id-time=2082787201l; session-token=OpmNbjJzw5oWMMDfwOq6ulXjKxrI3t64CVz9/dipmaCv83rv32RxTrxJ9uKE6BXdOAA0frbGXAXS8mX4z+3YzarfFdo8MD7rHf++Jg229SzcD4XHiXdZge5veFvjgVR3xZwqxj/6x8wkGjppRbVcBlKrxkAiLN6lM485DXbMrga9Dlv9HV7Dq4y0DGXIi7WwTTvo200JvtMHFJ3h2zrRQNBWDAvitxJUu97phcXCfT/1q/dTN1Jwr0YsLKNDTVQhGIWkKMQrmQRow0OrbbcO/5tY6B46TzJViNN3ZURoCga8avivzCKTD6sTp8cURx8BwpYutiLMW4FiTqyEJZlVuGxdBw2AH7T7; csm-hit=tb:HKRBZ9MFZ0V9WEVSDK14+s-4K6Y2K7CBW55KR10YN9S|1727798078925&t:1727798078925&adb:adblk_yes',
-        'device-memory': '8',
-        'downlink': '10',
-        'dpr': '0.6666666666666666',
-        'ect': '4g',
-        'priority': 'u=0, i',
-        'rtt': '150',
-        'sec-ch-device-memory': '8',
-        'sec-ch-dpr': '0.6666666666666666',
-        'sec-ch-ua': '"Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-ch-ua-platform-version': '"10.0.0"',
-        'sec-ch-viewport-width': '1007',
-        'sec-fetch-dest': 'document',
-        'sec-fetch-mode': 'navigate',
-        'sec-fetch-site': 'none',
-        'sec-fetch-user': '?1',
-        'upgrade-insecure-requests': '1',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-        'viewport-width': '1007',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-language': 'en-US,en;q=0.9,ar;q=0.8',
+    'cache-control': 'no-cache',
+    'cookie': 'session-id=258-6012606-2561645; i18n-prefs=SAR; ubid-acbsa=257-1535786-5196730; lc-acbsa=en_AE; session-token=2O6CMqMgveZzEjnpvpbrVcdVjFM+yHCNqpvtVTZFyG4o6WbdbXmKYuifwwfIzVoioeTy1qkSBxE1nHxuPIdMOaNfiN1coOMJyHy//6iD19TTZ8cenuwRLDRV5LAjUWeKyA0QTYZ2XNPEG2wjSZncCAyixDUxV0+e3h5SN5X+xp1MeVo1rKmCJb6sQMNgnGQgsDAoIdFqqROQocvosyjRlRpacq6ch51bzTMrZxPijmH24TK8tTLyq3xPO4H36MpVmjUkyvg4r1XVmPoEbscWggKzsUmRO2+fqmLQt/oL6DYm0rqmnVjB/HA8EnMUizldT4VHRLTyJMF6Rc3lmu6eXKor+AEsBleY; csm-hit=tb:s-FZQQRKF9CCAJVDA7XEEJ|1734598252871&t:1734598254997&adb:adblk_yes; session-id-time=2082758401l',
+    'device-memory': '8',
+    'downlink': '10',
+    'dpr': '0.6666666666666666',
+    'ect': '4g',
+    'pragma': 'no-cache',
+    'priority': 'u=0, i',
+    'referer': 'https://www.amazon.sa/',
+    'rtt': '100',
+    'sec-ch-device-memory': '8',
+    'sec-ch-dpr': '0.6666666666666666',
+    'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-ch-ua-platform-version': '"10.0.0"',
+    'sec-ch-viewport-width': '1149',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-user': '?1',
+    'upgrade-insecure-requests': '1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'viewport-width': '1149',
     }
 
     while len(products) < num_products:
@@ -47,72 +186,70 @@ async def fetch_amazon_search_results(session, query, num_products):
             'page': page,
             'language': 'en'
         }
-        
+        print(f"Fetching Amazon data for query '{query}' with num_products={num_products}")
+
         async with session.get(base_url, headers=headers, params=params) as response:
             content = await response.text()
             soup = BeautifulSoup(content, 'html.parser')
+            listitems = soup.find_all('div', role='listitem')
+
+            # print(f"Found {len(listitems)} listitems on page {page}")
+            if not listitems:
+                print(f"No more products found on page {page}.")
+                break
             
-
-            
-            # Find all product containers on the page
-            product_elements = soup.select('.s-main-slot .s-result-item')
-            products = []
-
-            for product in product_elements:
-                # Try to get ASIN from data-asin, or retrieve it by inspecting attributes
-                asin = product.get('data-asin', None)
-                if not asin:
-                    asin_tag = product.get('data-asin')
-                    asin = asin_tag if asin_tag else None
-
-                # Check for the title element and extract it if present
-                title_element = product.select_one('h2 .a-text-normal')
-                if title_element:
-                    title = title_element.get_text(strip=True)
-                    print(f"Product Title: {title}")  # Print each title to the terminal
-
-                    # Get the current price, convert to float
-                    current_price_element = product.select_one('.a-row.a-size-base.a-color-base .a-price .a-offscreen')
-                    current_price_text = current_price_element.get_text(strip=True) if current_price_element else None
-                    current_price = float(re.sub(r'[^\d.]', '', current_price_text)) if current_price_text else None
-
-                    # Get the original price (before discount), convert to float
-                    original_price_element = product.select_one('.a-row.a-size-base.a-color-base .a-price.a-text-price .a-offscreen')
-                    original_price_text = original_price_element.get_text(strip=True) if original_price_element else None
-                    original_price = float(re.sub(r'[^\d.]', '', original_price_text)) if original_price_text else None
-
-                    # Calculate the discount percentage if original price is available
-                    amazon_discount = (100-(current_price / original_price * 100)) if current_price and original_price else None
-
-                    # Extract purchase count text if available
-                    purchase_count_element = product.select_one('span.a-size-base.a-color-secondary')
-                    purchase_count_text = purchase_count_element.get_text(strip=True) if purchase_count_element else None
-
-                    # Print ASIN, prices, discount, and purchase count to the terminal
-                    print(f"ASIN: {asin}, Current Price: {current_price}, Original Price: {original_price}, "
-                        f"Discount: {amazon_discount}, Purchase Count: {purchase_count_text}")
-
-                    # Append the product data to the list
-                    products.append({
-                        'ASIN': asin,
-                        'title': title,
-                        'current_price': current_price,
-                        'original_price': original_price,
-                        'amazon_discount': amazon_discount,
-                        'purchase_count': purchase_count_text
-                    })
-
+            for product in listitems:
                 
-                # Stop if we've collected the desired number of products
+                # Extract title
+                title_element = product.select_one('h2.a-text-normal')
+                title = title_element.get_text(strip=True) if title_element else None
+
+
+                # Extract ASIN
+                asin = product.get('data-asin', None)
+
+                # Extract current price
+                current_price_element = product.select_one('.a-row.a-size-base.a-color-base .a-price .a-offscreen')
+                current_price_text = current_price_element.get_text(strip=True) if current_price_element else None
+                current_price = (
+                    float(re.sub(r'[^\d.]', '', current_price_text))
+                    if current_price_text else None
+                )
+
+                # Extract original price
+                original_price_element = product.select_one('div.a-section.aok-inline-block .a-price.a-text-price .a-offscreen')
+                original_price_text = original_price_element.get_text(strip=True) if original_price_element else None
+                original_price = (
+                    float(re.sub(r'[^\d.]', '', original_price_text))
+                    if original_price_text else None
+                )
+
+                # Calculate discount percentage
+                amazon_discount = (
+                    100 - (current_price / original_price * 100)
+                    if current_price and original_price else None
+                )
+
+                # Extract purchase count
+                purchase_count_element = product.select_one('span.a-size-base.a-color-secondary')
+                purchase_count_text = purchase_count_element.get_text(strip=True) if purchase_count_element else None
+
+                # Append data
+                products.append({
+                    'title': title,
+                    'asin': asin,
+                    'current_price': current_price,
+                    'original_price': original_price,
+                    'amazon_discount': amazon_discount,
+                    'purchase_count': purchase_count_text,
+                })
+
+                # Stop if we've collected enough products
                 if len(products) >= num_products:
                     break
-            
-            page += 1
 
-            # If no products found on the page, break to avoid infinite loop
-            if not product_elements:
-                print("No more products found.")
-                break
+        page += 1
+        await asyncio.sleep(2)  # Add delay to prevent throttling
 
     return products
 
@@ -130,7 +267,7 @@ async def get_amazon_details(amazon_queries, num_products):
             if response:  # Check if response contains data
                 for product in response:
                     all_amazon_data.append({
-                        'ASIN': product.get('ASIN'),
+                        'ASIN': product.get('asin'),
                         'title': product.get('title'),
                         'current_price': product.get('current_price'),
                         'original_price': product.get('original_price'),
@@ -184,7 +321,7 @@ async def fetch_dawa_data(session, query, num_products):
         try:
             response_data = await response.json()
             hits = response_data.get("results", [])[0].get("hits", [])
-            print(f"Query '{query}' returned {len(hits)} products in Dawa.")
+            # print(f"Query '{query}' returned {len(hits)} products in Dawa.")
         except aiohttp.ContentTypeError:
             print(f"Failed to fetch data for Dawa for query '{query}'.")
             response_data = {"results": []}
@@ -286,8 +423,8 @@ async def fetch_nahdi_data(session, query, num_products):
         try:
             response_data = await response.json()
             hits = response_data.get("results", [])[0].get("hits", [])
-            print(f"Query '{query}' returned {len(hits)} products.")
-            print(f"Query '{query}' returned {len(hits)} products in Nahdi.")
+            # print(f"Query '{query}' returned {len(hits)} products.")
+            # print(f"Query '{query}' returned {len(hits)} products in Nahdi.")
         except aiohttp.ContentTypeError:
             print(f"Failed to fetch data for Nahdi for query '{query}'.")
             response_data = {"results": []}

@@ -28,9 +28,11 @@ def plot_dashboard(serialized_data, user_accounts):
         df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
 
     # Debug: Print DataFrame info
-    # print(df.info())
-    # df.to_csv('df_main.cav')
+    # print(df.infos())
     df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
+    # df.sample(frac =.10).to_csv('df_main_tailafter.csv')
+    # print('Competitor are',df['Competitor'].unique())
+    # print('Competitor afalse',df[df['Competitor'] == 'False']['Product'].unique())
 
     app = DjangoDash('OPPS_Line', external_stylesheets=['https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'])
 
@@ -42,7 +44,7 @@ def plot_dashboard(serialized_data, user_accounts):
                     dcc.Dropdown(
                         id="product",
                         # options=[{"label": i, "value": i} for i in sorted(df["Product"].unique())],
-                        options=[{"label": i, "value": i} for i in sorted(filter(lambda x: x is not None, df[df['Competitor'] == False]["Product"].unique()))],
+                        options=[{"label": i, "value": i} for i in sorted(filter(lambda x: x is not None, df[df['Competitor'] == 'False']["Product"].unique()))],
                         value=None,
                         multi=False
                     ),
@@ -146,7 +148,7 @@ def plot_dashboard(serialized_data, user_accounts):
 
     def update_line_chart(product, period, selected_accounts, plot_types, advanced_overlay):
         # Initial debug statement to confirm callback input values
-        # print(f"Product: {product}, Period: {period}, Accounts: {selected_accounts}, Plot Type: {plot_types}, Overlay: {advanced_overlay}")
+        print(f"Product: {product}, Period: {period}, Accounts: {selected_accounts}, Plot Type: {plot_types}, Overlay: {advanced_overlay}")
 
         if selected_accounts is None:
             selected_accounts = []
@@ -175,7 +177,7 @@ def plot_dashboard(serialized_data, user_accounts):
                                'nahdi_discount', 
                                'nahdi_ordered_qty']
             df_product.loc[:, numeric_columns] = df_product[numeric_columns].replace([None, 'N/A'], pd.NA).apply(pd.to_numeric, errors='coerce')
-
+            # print('dtypes are', df_product.dtypes)
             # Filter for category or subcategory match with key_name
             categories = list(df_product['Category'].dropna().unique())
             subcategories = list(df_product['Subcategory'].dropna().unique())
@@ -185,7 +187,7 @@ def plot_dashboard(serialized_data, user_accounts):
 
             # Create competitor_df based on the filtered categories and subcategories for Competitor == True
             competitor_df = df_copy[
-                (df_copy['Competitor'] == True) & 
+                (df_copy['Competitor'] == 'True') & 
                 (df_copy['Category'].isin(categories) | df_copy['Subcategory'].isin(subcategories))
             ]
             competitor_df = competitor_df.sort_values(by=['Product', 'scraped_at'], ascending=[True, False])

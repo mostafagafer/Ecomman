@@ -1,15 +1,17 @@
-import json
-from django.core.cache import cache
+# import json
+# import logging
 
-def get_cached_data(cache_key, process_function, *args):
-    cached_data = cache.get(cache_key)
-    if cached_data:
-        return cached_data  # Return cached data directly (already JSON serialized)
-    else:
-        data = process_function(*args)
-        serialized_data = json.dumps(data)  # Serialize to JSON for caching
-        cache.set(cache_key, serialized_data, timeout=3600)  # Cache for 1 hour
-        return serialized_data
+# from django.core.cache import cache
+
+# def get_cached_data(cache_key, process_function, *args):
+#     cached_data = cache.get(cache_key)
+#     if cached_data:
+#         return cached_data  # Return cached data directly (already JSON serialized)
+#     else:
+#         data = process_function(*args)
+#         serialized_data = json.dumps(data)  # Serialize to JSON for caching
+#         cache.set(cache_key, serialized_data, timeout=3600)  # Cache for 1 hour
+#         return serialized_data
 
 # def process_data(scraped_data, scraped_bulk_data):
 #     # Initialize empty dictionary for data
@@ -109,8 +111,7 @@ def get_cached_data(cache_key, process_function, *args):
 
 
 def process_data(scraped_data, scraped_bulk_data):
-    import logging
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     # Initialize empty dictionary for data
     data = {
@@ -132,6 +133,8 @@ def process_data(scraped_data, scraped_bulk_data):
         'noon_sa_price': [],
         'nahdi_ordered_qty': [],
         'opps': [],
+        'account_deviation_score':[],
+        'price_deviation_score':[],
         'Brand': [],
         'Category': [],
         'Subcategory': [],
@@ -146,26 +149,28 @@ def process_data(scraped_data, scraped_bulk_data):
         account_names = [str(account.name) for account in accounts]  # Convert to string
         account_str = ", ".join(account_names) if account_names else None
 
-        logger.info(f"Processing scraped_data item: {item}")
+        # logger.info(f"Processing scraped_data item: {item}")
 
-        data['scraped_at'].append(str(item.scraped_at) if item.scraped_at else None)
-        data['RSP_VAT'].append(str(item.product.RSP_VAT) if item.product.RSP_VAT is not None else None)
-        data['discount_percentage'].append(str(item.discount_percentage) if item.discount_percentage is not None else None)
+        data['scraped_at'].append(item.scraped_at.isoformat() if item.scraped_at else None)  # Convert datetime to ISO
+        data['RSP_VAT'].append(float(item.product.RSP_VAT) if item.product.RSP_VAT is not None else None)
+        data['discount_percentage'].append(float(item.discount_percentage) if item.discount_percentage is not None else None)
         data['key_name'].append(None)
         data['amazon_title'].append(str(item.amazon_title))
         data['nahdi_title'].append(str(item.nahdi_title))
         data['dawa_title'].append(str(item.dawa_title))
         data['noon_sa_title'].append(str(item.noon_sa_title))
-        data['amazon_price'].append(str(item.amazon_price) if item.amazon_price is not None else None)
-        data['nahdi_price'].append(str(item.nahdi_price) if item.nahdi_price is not None else None)
-        data['dawa_price'].append(str(item.dawa_price) if item.dawa_price is not None else None)
-        data['amazon_discount'].append(str(item.amazon_discount) if item.amazon_discount is not None else None)
-        data['nahdi_discount'].append(str(item.nahdi_discount) if item.nahdi_discount is not None else None)
-        data['dawa_discount'].append(str(item.dawa_discount) if item.dawa_discount is not None else None)
-        data['noon_sa_discount'].append(str(item.noon_sa_discount) if item.noon_sa_discount is not None else None)
+        data['amazon_price'].append(float(item.amazon_price) if item.amazon_price is not None else None)
+        data['nahdi_price'].append(float(item.nahdi_price) if item.nahdi_price is not None else None)
+        data['dawa_price'].append(float(item.dawa_price) if item.dawa_price is not None else None)
+        data['amazon_discount'].append(float(item.amazon_discount) if item.amazon_discount is not None else None)
+        data['nahdi_discount'].append(float(item.nahdi_discount) if item.nahdi_discount is not None else None)
+        data['dawa_discount'].append(float(item.dawa_discount) if item.dawa_discount is not None else None)
+        data['noon_sa_discount'].append(float(item.noon_sa_discount) if item.noon_sa_discount is not None else None)
         data['noon_sa_price'].append(float(item.noon_sa_price) if item.noon_sa_price is not None else None)
-        data['nahdi_ordered_qty'].append(str(item.nahdi_ordered_qty) if item.nahdi_ordered_qty is not None else None)
-        data['opps'].append(str(item.opps) if item.opps is not None else None)
+        data['nahdi_ordered_qty'].append(int(item.nahdi_ordered_qty) if item.nahdi_ordered_qty is not None else None)
+        data['opps'].append(float(item.opps) if item.opps is not None else None)
+        data['account_deviation_score'].append(float(item.account_deviation_score) if item.account_deviation_score is not None else None)
+        data['price_deviation_score'].append(float(item.price_deviation_score) if item.price_deviation_score is not None else None)
         data['Brand'].append(str(item.product.brand) if item.product.brand else None)
         data['Category'].append(str(item.product.category) if item.product.category else None)
         data['Subcategory'].append(str(item.product.subcategory) if item.product.subcategory else None)
@@ -175,9 +180,9 @@ def process_data(scraped_data, scraped_bulk_data):
 
     # Populate data from `scraped_bulk_data`
     for bulk_item in scraped_bulk_data:
-        logger.info(f"Processing scraped_bulk_data item: {bulk_item}")
+        # logger.info(f"Processing scraped_bulk_data item: {bulk_item}")
 
-        data['scraped_at'].append(str(bulk_item.scraped_at) if bulk_item.scraped_at else None)
+        data['scraped_at'].append(bulk_item.scraped_at.isoformat() if bulk_item.scraped_at else None)
         data['RSP_VAT'].append(None)
         data['discount_percentage'].append(None)
         data['key_name'].append(str(bulk_item.key_name) if bulk_item.key_name else None)
@@ -185,16 +190,18 @@ def process_data(scraped_data, scraped_bulk_data):
         data['nahdi_title'].append(str(bulk_item.nahdi_title) if bulk_item.nahdi_title else None)
         data['dawa_title'].append(str(bulk_item.dawa_title) if bulk_item.dawa_title else None)
         data['noon_sa_title'].append(str(bulk_item.noon_sa_title) if bulk_item.noon_sa_title else None)
-        data['amazon_price'].append(str(bulk_item.amazon_price) if bulk_item.amazon_price is not None else None)
-        data['nahdi_price'].append(str(bulk_item.nahdi_price) if bulk_item.nahdi_price is not None else None)
-        data['dawa_price'].append(str(bulk_item.dawa_price) if bulk_item.dawa_price is not None else None)
-        data['amazon_discount'].append(str(bulk_item.amazon_discount) if bulk_item.amazon_discount is not None else None)
-        data['nahdi_discount'].append(str(bulk_item.nahdi_discount) if bulk_item.nahdi_discount is not None else None)
-        data['dawa_discount'].append(str(bulk_item.dawa_discount) if bulk_item.dawa_discount is not None else None)
-        data['noon_sa_discount'].append(str(bulk_item.noon_sa_discount) if bulk_item.noon_sa_discount is not None else None)
+        data['amazon_price'].append(float(bulk_item.amazon_price) if bulk_item.amazon_price is not None else None)
+        data['nahdi_price'].append(float(bulk_item.nahdi_price) if bulk_item.nahdi_price is not None else None)
+        data['dawa_price'].append(float(bulk_item.dawa_price) if bulk_item.dawa_price is not None else None)
+        data['amazon_discount'].append(float(bulk_item.amazon_discount) if bulk_item.amazon_discount is not None else None)
+        data['nahdi_discount'].append(float(bulk_item.nahdi_discount) if bulk_item.nahdi_discount is not None else None)
+        data['dawa_discount'].append(float(bulk_item.dawa_discount) if bulk_item.dawa_discount is not None else None)
+        data['noon_sa_discount'].append(float(bulk_item.noon_sa_discount) if bulk_item.noon_sa_discount is not None else None)
         data['noon_sa_price'].append(float(bulk_item.noon_sa_price) if bulk_item.noon_sa_price is not None else None)
-        data['nahdi_ordered_qty'].append(str(bulk_item.nahdi_ordered_qty) if bulk_item.nahdi_ordered_qty is not None else None)
+        data['nahdi_ordered_qty'].append(int(bulk_item.nahdi_ordered_qty) if bulk_item.nahdi_ordered_qty is not None else None)
         data['opps'].append(None)
+        data['account_deviation_score'].append(None)
+        data['price_deviation_score'].append(None)
         data['Brand'].append(None)
         data['Category'].append(None)
         data['Subcategory'].append(None)
