@@ -108,7 +108,7 @@
 #     data = {key: values[:min_length] for key, values in data.items()}
 
 #     return data
-
+import math
 
 def process_data(scraped_data, scraped_bulk_data):
     # logger = logging.getLogger(__name__)
@@ -167,7 +167,11 @@ def process_data(scraped_data, scraped_bulk_data):
         data['dawa_discount'].append(float(item.dawa_discount) if item.dawa_discount is not None else None)
         data['noon_sa_discount'].append(float(item.noon_sa_discount) if item.noon_sa_discount is not None else None)
         data['noon_sa_price'].append(float(item.noon_sa_price) if item.noon_sa_price is not None else None)
-        data['nahdi_ordered_qty'].append(int(item.nahdi_ordered_qty) if item.nahdi_ordered_qty is not None else None)
+        # data['nahdi_ordered_qty'].append(int(item.nahdi_ordered_qty) if item.nahdi_ordered_qty is not None else None)
+        data['nahdi_ordered_qty'].append(
+    int(item.nahdi_ordered_qty) if item.nahdi_ordered_qty is not None and not math.isnan(item.nahdi_ordered_qty) else None
+)
+
         data['opps'].append(float(item.opps) if item.opps is not None else None)
         data['account_deviation_score'].append(float(item.account_deviation_score) if item.account_deviation_score is not None else None)
         data['price_deviation_score'].append(float(item.price_deviation_score) if item.price_deviation_score is not None else None)
@@ -198,7 +202,10 @@ def process_data(scraped_data, scraped_bulk_data):
         data['dawa_discount'].append(float(bulk_item.dawa_discount) if bulk_item.dawa_discount is not None else None)
         data['noon_sa_discount'].append(float(bulk_item.noon_sa_discount) if bulk_item.noon_sa_discount is not None else None)
         data['noon_sa_price'].append(float(bulk_item.noon_sa_price) if bulk_item.noon_sa_price is not None else None)
-        data['nahdi_ordered_qty'].append(int(bulk_item.nahdi_ordered_qty) if bulk_item.nahdi_ordered_qty is not None else None)
+        # data['nahdi_ordered_qty'].append(int(bulk_item.nahdi_ordered_qty) if bulk_item.nahdi_ordered_qty is not None else None)
+        data['nahdi_ordered_qty'].append(
+    int(bulk_item.nahdi_ordered_qty) if bulk_item.nahdi_ordered_qty is not None and not math.isnan(bulk_item.nahdi_ordered_qty) else None
+)
         data['opps'].append(None)
         data['account_deviation_score'].append(None)
         data['price_deviation_score'].append(None)

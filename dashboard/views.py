@@ -32,11 +32,11 @@ def scrape_user_products_view(request):
         product_ids = list(user_products.values_list('id', flat=True))
 
         # Trigger the Celery tasks
-        print('Scraping products for user...')
-        scrape_user_products_task.delay(product_ids)
+        # print('Scraping products for user...')
+        # scrape_user_products_task.delay(product_ids)
         
-        print('Scraping bulk products for user...')
-        scrape_user_Bulk_product_task.delay(product_ids)
+        # print('Scraping bulk products for user...')
+        # scrape_user_Bulk_product_task.delay(product_ids)
 
         print('Caching data for user...')
         cache_user_data.delay(request.user.id)
