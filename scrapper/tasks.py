@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Scheduled tasks
 @shared_task
-def scheduled_products_scraper(sample_size=50):
+def scheduled_products_scraper(sample_size=200):
     try:
         # Fetch all products
         all_products = Product.objects.all()
@@ -212,7 +212,7 @@ def scheduled_products_scraper(sample_size=50):
         }
 
 @shared_task
-def scheduled_bulk_scraper(sample_size=50):
+def scheduled_bulk_scraper(sample_size=200):
     try:
         # Fetch all products
         all_products = Product.objects.all()

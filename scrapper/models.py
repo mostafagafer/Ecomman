@@ -21,8 +21,8 @@ class ScrapedData(models.Model):
 
     # Amazon attributes 
     amazon_price = models.FloatField(blank=True, null=True)
-    amazon_shipping = models.CharField(max_length=30, blank=True, null=True)
-    amazon_sold_by = models.CharField(max_length=30, blank=True, null=True)
+    amazon_shipping = models.CharField(max_length=200, blank=True, null=True)
+    amazon_sold_by = models.CharField(max_length=200, blank=True, null=True)
     amazon_title = models.CharField(max_length=500, blank=True, null=True)
     amazon_availability_info = models.CharField(max_length=200, blank=True, null=True)
     amazon_discount = models.FloatField(blank=True, null=True)
@@ -44,7 +44,7 @@ class ScrapedData(models.Model):
     nahdi_availability_info = models.IntegerField(blank=True, null=True)
     nahdi_original_price = models.FloatField(blank=True, null=True)
     nahdi_ordered_qty = models.FloatField(blank=True, null=True)
-    nahdi_sold_out = models.CharField(max_length=50, blank=True, null=True)
+    nahdi_sold_out = models.CharField(max_length=200, blank=True, null=True)
     nahdi_limited_stock = models.CharField(max_length=50, blank=True, null=True)
     nahdi_discount = models.FloatField(blank=True, null=True)
 
@@ -54,7 +54,7 @@ class ScrapedData(models.Model):
     noon_sa_availability_info = models.IntegerField(blank=True, null=True)
     noon_sa_original_price = models.FloatField(blank=True, null=True)
     noon_sa_discount = models.FloatField(blank=True, null=True)
-    noon_sa_sold_by = models.CharField(max_length=30, blank=True, null=True)
+    noon_sa_sold_by = models.CharField(max_length=200, blank=True, null=True)
 
     @cached_property
     def promo_flag(self):
