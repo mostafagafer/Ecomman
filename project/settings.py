@@ -238,9 +238,9 @@ else:
 
 
 CELERY_BEAT_SCHEDULE = {
-    'product-scrape-every-6-hours': {
+    'product-scrape-every-12-hours': {
         'task': 'scrapper.tasks.scheduled_products_scraper',
-        'schedule': 21600.0,  # 6 hours
+        'schedule': 43200.0,  # 12 hours
     },
     'bulk-scrape-every-12-hours': {
         'task': 'scrapper.tasks.scheduled_bulk_scraper',
