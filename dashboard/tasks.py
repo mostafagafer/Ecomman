@@ -277,15 +277,25 @@ def cache_user_data(user_id):
 
         # Process and cache data
         try:
-            data = process_data(scraped_data, scraped_bulk_data)
+            new_data = process_data(scraped_data, scraped_bulk_data)
+
+            # Append new data to existing data if it exists
+            if existing_data:
+                for key, values in new_data.items():
+                    if key in existing_data:
+                        existing_data[key].extend(values)  # Append new rows
+                    else:
+                        existing_data[key] = values  # Add new keys if not present
+            else:
+                existing_data = new_data  # Initialize with new data if no cache exists
+
+            serialized_data = json.dumps(existing_data)  # Serialize the updated data
+            cache.set(cache_key, serialized_data, timeout=None)  # Save to cache
+            logger.info(f"Successfully cached and updated data for user {user.username}.")
+            return f"Cached data for user {user.username}."
         except Exception as process_error:
             logger.error(f"Error in process_data for user {user_id}: {process_error}")
             raise
-
-        serialized_data = json.dumps(data)
-        cache.set(cache_key, serialized_data, timeout=None)
-        logger.info(f"Successfully cached data for user {user.username}.")
-        return f"Cached data for user {user.username}."
     except Exception as e:
         logger.error(f"Error caching data for user {user_id}: {str(e)}")
         return f"Error caching data for user {user_id}: {str(e)}"
