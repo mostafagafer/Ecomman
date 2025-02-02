@@ -50,7 +50,7 @@ def cache_user_data(user_id):
 
             # Save to cache (overwrite existing data)
             cache_key = f'dashboard_data_{user.id}'
-            cache.set(cache_key, compressed_data, timeout=None)
+            cache.set(cache_key, compressed_data, timeout=7200)
             logger.info(f"Successfully cached data for user {user.username}.")
             return f"Cached data for user {user.username}."
         except Exception as process_error:
