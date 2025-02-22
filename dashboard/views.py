@@ -21,6 +21,8 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 
+#Test
+
 @login_required
 def scrape_user_products_view(request):
     try:
