@@ -246,10 +246,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'scrapper.tasks.scheduled_bulk_scraper',
         'schedule': 43200.0,  # 12 hours
     },
-    #     'cache-data-every-24-hours': { 
-    #     'task': 'dashboard.tasks.caching_data', 
-    #     'schedule': 86400.0,  # 24 hours
-    # },
+        'cache-data-every-24-hours': { 
+        'task': 'dashboard.tasks.caching_data', 
+        'schedule': 86400.0,  # 24 hours
+    },
 
 }
 

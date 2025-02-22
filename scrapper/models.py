@@ -1,19 +1,6 @@
 from django.db import models
 from client_profile.models import Product, PromoPlan
 from django.utils.functional import cached_property
-# from .utils import parse_discount_from_text
-
-# def calculate_price_discount(price, original_price):
-#     if price is None:
-#         price = 0
-#     if original_price is not None and original_price != 0:
-#         effective_price = original_price
-#         discount = (1 - price / original_price) * 100
-#     else:
-#         effective_price = price
-#         discount = 0
-
-#     return round(effective_price, 2), round(discount, 2)
 
 class ScrapedData(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -73,11 +60,6 @@ class ScrapedData(models.Model):
         ).first()
         return promo_plan.discount_percentage if promo_plan else 0
 
-    # @cached_property
-    # def final_price(self):
-    #     rsp_vat = self.product.RSP_VAT
-    #     discount = self.discount_percentage / 100
-    #     return rsp_vat - (discount * rsp_vat)
     @cached_property
     def final_price(self):
         rsp_vat = self.product.RSP_VAT
@@ -94,12 +76,6 @@ class ScrapedData(models.Model):
         ratio = self.nahdi_price / self.final_price
         return ratio
 
-    # @cached_property
-    # def nahdi_discount(self):
-    #     if self.nahdi_original_price and self.nahdi_price:
-    #         return (100-(self.nahdi_price / self.nahdi_original_price)*100)
-    #     return 0
-
     @cached_property
     def nahdi_compliance_score(self):
         if self.final_price is None or self.nahdi_price is None:
@@ -109,17 +85,6 @@ class ScrapedData(models.Model):
         complience_score = (1-(abs_diff/(0.5*self.final_price)))
 
         return complience_score
-
-    # @cached_property
-    # def nahdi_compliance_flag(self):
-    #     if self.final_price is None or self.nahdi_price is None:
-    #         return False
-        
-    #     lower_limit = self.final_price * 0.9
-    #     upper_limit = self.final_price * 1.1
-
-    #     return lower_limit <= self.nahdi_price <= upper_limit
-
 
 
     @cached_property
@@ -139,26 +104,6 @@ class ScrapedData(models.Model):
 
         return complience_score
 
-    # @cached_property
-    # def amazon_compliance_flag(self):
-    #     if self.final_price is None or self.amazon_price is None:
-    #         return False
-        
-    #     lower_limit = self.final_price * 0.9
-    #     upper_limit = self.final_price * 1.1
-
-    #     return lower_limit <= self.amazon_price <= upper_limit
-    
-
-
-    # @cached_property
-    # def dawa_discount(self):
-    #     # Additional discount based on offer text
-    #     offer_text_discount = parse_discount_from_text(self.dawa_offer_text_notag) if self.dawa_offer_text_notag else 0
-
-    #     # Sum both discounts for the final value
-    #     return offer_text_discount
-
     @cached_property
     def dawa_compliance_score(self):
         if self.final_price is None or self.dawa_price is None:
@@ -176,22 +121,6 @@ class ScrapedData(models.Model):
         ratio = self.dawa_price / self.final_price
         return ratio
     
-    # @cached_property
-    # def dawa_compliance_flag(self):
-    #     if self.final_price is None or self.dawa_price is None:
-    #         return False
-        
-    #     lower_limit = self.final_price * 0.9
-    #     upper_limit = self.final_price * 1.1
-
-    #     return lower_limit <= self.dawa_price <= upper_limit
-
-
-
-
-    # @cached_property
-    # def noon_sa_price_discount(self):
-    #     return calculate_price_discount(self.noon_sa_price, self.noon_sa_original_price)
 
 
     @cached_property
@@ -246,23 +175,6 @@ class ScrapedData(models.Model):
         return self.calculate_compliance_flag(self.noon_sa_price)
 
 
-    # @cached_property
-    # def price_deviation_score(self):
-    #     store_prices = [self.amazon_price, self.dawa_price, self.nahdi_price, self.noon_sa_price]
-    #     store_prices = [price for price in store_prices if price is not None]
-        
-    #     if not store_prices or self.final_price == 0:
-    #         return 0
-        
-    #     average_deviation = sum(abs(price - self.final_price) for price in store_prices) / len(store_prices)
-
-    #     # Old PDS 
-    #     # pds = (1 - (average_deviation / self.final_price)) * 100
-        
-    #     # New PDS as per mahmoud 19oct/2024
-    #     pds = (average_deviation / self.final_price)*100
-
-    #     return pds
 
     @cached_property
     def price_deviation_score(self):
@@ -315,14 +227,6 @@ class ScrapedData(models.Model):
             return (sum(valid_scores) / len(valid_scores))*100
         return None  # Return None if no valid scores
 
-    # @cached_property
-    # def opps(self):
-
-    #     # old opps
-    #     # opps = (self.price_deviation_score+self.pcs)/2
-    #     # New opps
-    #     opps = ((100-self.price_deviation_score)+self.account_deviation_score)/2
-    #     return opps
 
     @cached_property
     def opps(self):
@@ -429,34 +333,6 @@ class ScrapedBulkData(models.Model):
     noon_sa_original_price = models.FloatField(blank=True, null=True)
     noon_sa_discount = models.FloatField(blank=True, null=True)
 
-    # @cached_property
-    # def nahdi_discount(self):
-    #     if self.nahdi_original_price and self.nahdi_price:
-    #         return (self.nahdi_price / self.nahdi_original_price)*100
-    #     return 0
-
-    # Old definition
-    # @cached_property
-    # def dawa_discount(self):
-    #     if self.dawa_original_price and self.dawa_price:
-    #         return (self.dawa_price / self.dawa_original_price)*100
-    #     return 0
-
-    # New definition
-    # @cached_property
-    # def dawa_discount(self):
-    #     # Additional discount based on offer text
-    #     offer_text_discount = parse_discount_from_text(self.dawa_offer_text_notag) if self.dawa_offer_text_notag else 0
-
-    #     # Sum both discounts for the final value
-    #     return offer_text_discount
-
-
-    # @cached_property
-    # def amazon_discount(self):
-    #     if self.amazon_original_price and self.amazon_price:
-    #         return (self.amazon_price / self.amazon_original_price)*100
-    #     return 0
 
 
         
