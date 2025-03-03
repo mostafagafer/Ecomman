@@ -50,7 +50,7 @@ class Subcategory(models.Model):
 
 class Product(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='products')
-    TITLE = models.CharField(max_length=100)
+    TITLE = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     RSP = models.FloatField(null=True, blank=True)  # Allowing null and blank
     RSP_VAT = models.FloatField(null=True, blank=True)  # Allowing null and blank
@@ -59,6 +59,13 @@ class Product(models.Model):
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     is_competitor = models.BooleanField(default=False)  
+    # Self-referential ManyToManyField for competitor references
+    competitor_references = models.ManyToManyField(
+        'self',
+        blank=True,
+        symmetrical=False,
+        related_name='referenced_by'
+    )
 
 
     def __str__(self):

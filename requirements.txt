@@ -45,6 +45,7 @@ django-filter==24.2
 django-pagination==1.0.7
 django-plotly-dash==2.3.1
 django-redis==5.4.0
+django-silk==5.3.2
 django-tables2==2.7.0
 django-timezone-field==7.0
 dpd-static-support==0.0.5
