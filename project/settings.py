@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'client_profile',
     'scrapper',
     'contact',
-    'silk',
+    # 'silk',
     
     # Plotlydash
     'channels',
@@ -88,7 +88,7 @@ MIDDLEWARE = [
     'django_plotly_dash.middleware.ExternalRedirectionMiddleware',
 
     # silk
-    'silk.middleware.SilkyMiddleware',
+    # 'silk.middleware.SilkyMiddleware',
 
 ]
 
