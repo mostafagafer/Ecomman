@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 from scrapper.utils import parse_discount_from_text
-
+import re
 import aiohttp
 import asyncio
 import json
@@ -357,7 +357,7 @@ async def get_dawa_prices(dawa_queries):
 
 # Function to fetch data from Noon.sa
 async def fetch_noon_data(session, query):
-    url = f'https://www.noon.com/saudi-en/search/?q={query}'
+    url = f'https://www.noon.com/saudi-en/search?q={query}'
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
@@ -376,10 +376,8 @@ async def fetch_noon_data(session, query):
         'sec-ch-ua-platform': '"Windows"',
     }
 
-    # print(f"Fetching data for query: {query}")
     try:
         async with session.get(url, headers=headers) as response:
-            # print(f"Response status for '{query}': {response.status}")
             response_data = await response.text()
             return response_data
     except Exception as e:
@@ -388,70 +386,35 @@ async def fetch_noon_data(session, query):
 
 # Function to process the Noon response
 def process_noon_response(html_content):
-    # print("Processing HTML content...")
     soup = BeautifulSoup(html_content, 'html.parser')
-    script_tag = soup.find('script', id="__NEXT_DATA__", type="application/json")
     
-    if not script_tag:
-        print("Error: __NEXT_DATA__ script not found in the HTML.")
-        return []
+    # Extract product name
+    product_name_tag = soup.find('h2', class_='ProductDetailsSection_title__JorAV', attrs={'data-qa': 'product-name'})
+    product_name = product_name_tag['title'] if product_name_tag else None
+    
+    # Extract current price
+    current_price_tag = soup.find('strong', class_='Price_amount__2sXa7')
+    current_price = current_price_tag.text if current_price_tag else None
+    
+    # Extract original price
+    original_price_tag = soup.find('span', class_='Price_oldPrice__ZqD8B')
+    original_price = original_price_tag.text if original_price_tag else None
+    
+    # Check if the product is buyable
+    buyable_tag = soup.find('div', class_='ProductListDesktop_layoutWrapper__Kiw3A')
+    is_buyable = 1 if buyable_tag else 0
+    discount_tag = soup.find('span', class_='PriceDiscount_discount__1ViHb')
+    discount = discount_tag.text if discount_tag else None
+    if discount:
+        discount = re.sub(r'[^0-9]', '', discount)
 
-    try:
-        data = json.loads(script_tag.string)
-        # print("Successfully parsed JSON data.")
-    except json.JSONDecodeError:
-        print("Error: Failed to parse JSON data.")
-        return []
-
-    # # Print the entire JSON structure for debugging
-    # with open("debug_noon_data.json", "w", encoding="utf-8") as f:
-    #     json.dump(data, f, indent=4)
-    # print("JSON structure saved to 'debug_noon_data.json' for inspection.")
-
-    # Extract hits and facets
-    processed_data = []
-    hits = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('hits', [])
-    facets = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('facets', [])
-
-    # print(f"Number of hits: {len(hits)}")
-    # print(f"Number of facets: {len(facets)}")
-
-    for hit in hits:
-        name = hit.get('name')
-        price = hit.get('price')
-        original_price = hit.get('sale_price')
-        is_buyable = hit.get('is_buyable', None)  # Extracting "is_buyable" field
-
-        # Apply the coalesce logic to determine the effective price
-        if original_price is None:
-            effective_price = price
-            discount = 0
-        else:
-            effective_price = original_price
-            discount = (100 - (original_price/price)* 100  ) 
-
-
-        # Extract "sold_by" information
-        sold_by = None
-        for facet in facets:
-            if facet.get('code') == "partner":
-                sold_by_data = facet.get('data', [])
-                if sold_by_data:
-                    sold_by = sold_by_data[0].get('name', None)  # Assuming the first seller is desired
-
-        processed_data.append({
-            'name': name,
-            'price': price,
-            'original_price': original_price,
-            'calculated_price': round(effective_price, 2),  # Final effective price
-            'discount': round(discount, 2),  # Discount percentage
-
-            'sold_by': sold_by,
-            'availability_info': is_buyable,  # Including availability info
-        })
-
-    # print(f"Processed {len(processed_data)} items.")
-    return processed_data
+    return {
+        'product_name': product_name,
+        'current_price': current_price,
+        'original_price': original_price,
+        'is_buyable': is_buyable,
+        'discount': discount,
+    }
 
 # Asynchronous task to fetch and return Noon data for multiple queries
 async def get_noon_prices(noon_queries):
@@ -459,25 +422,112 @@ async def get_noon_prices(noon_queries):
         tasks = [fetch_noon_data(session, query) for query in noon_queries]
         responses = await asyncio.gather(*tasks)
 
-        # Process responses
         all_noon_data = []
-        for i, response in enumerate(responses):
-            if response:  # Check if response is not None
-                # print(f"Processing response for query index {i}...")
+        for response in responses:
+            if response:
                 processed = process_noon_response(response)
                 all_noon_data.append(processed)
             else:
-                print(f"No response for query index {i}.")
-                all_noon_data.append([])
+                print("No response for query.")
+                all_noon_data.append({
+                    'product_name': None,
+                    'current_price': None,
+                    'original_price': None,
+                    'discount': None,
+                    'is_buyable': None
+                })
+                
 
-        return [
-            {
-                'name': data[0]['name'] if data else None,
-                'original_price': data[0]['original_price'] if data else None,
-                'calculated_price': data[0]['calculated_price'] if data else None,
-                'discount': data[0]['discount'] if data else None,
-                'sold_by': data[0]['sold_by'] if data else None,
-                'availability_info': data[0]['availability_info'] if data else None,
-            }
-            for data in all_noon_data
-        ]
+        return all_noon_data
+
+# async def fetch_noon_data(session, query):
+#     # Identify the API endpoint from the network tab
+#     api_url = f'https://www.noon.com/_svc/catalog/api/search?q={query}'
+#     headers = {
+#         'Accept': 'application/json',
+#         'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
+#         'Cache-Control': 'no-cache',
+#         'Connection': 'keep-alive',
+#         'Pragma': 'no-cache',
+#         'Sec-Fetch-Dest': 'empty',
+#         'Sec-Fetch-Mode': 'cors',
+#         'Sec-Fetch-Site': 'same-origin',
+#         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+#     }
+
+#     try:
+#         async with session.get(api_url, headers=headers) as response:
+#             response_data = await response.json()
+#             return response_data
+#     except Exception as e:
+#         print(f"Error fetching data for query '{query}': {e}")
+#         return None
+
+# # Function to process the Noon API response
+
+# def process_noon_response(html_content):
+#     soup = BeautifulSoup(html_content, 'html.parser')
+    
+#     # Find the script tag containing the JSON data
+#     script_tag = soup.find('script', text=lambda t: t and 'hits' in t)
+    
+#     if not script_tag:
+#         print("Error: JSON data script not found in the HTML.")
+#         return []
+
+#     try:
+#         # Extract the JSON data from the script tag using regex
+#         script_text = script_tag.string
+#         json_match = re.search(r'hits":(\[.*?\]),"searchEngine', script_text, re.DOTALL)
+        
+#         if not json_match:
+#             print("Error: JSON data not found in the script tag.")
+#             return []
+
+#         json_data = json_match.group(1)
+#         data = json.loads(json_data)
+#     except json.JSONDecodeError as e:
+#         print(f"Error: Failed to parse JSON data. {e}")
+#         return []
+
+#     processed_data = []
+#     for hit in data:
+#         name = hit.get('name')
+#         price = hit.get('price')
+#         original_price = hit.get('sale_price')
+#         is_buyable = hit.get('is_buyable', None)  # Extracting "is_buyable" field
+
+#         processed_data.append({
+#             'name': name,
+#             'price': price,
+#             'original_price': original_price,
+#             'is_buyable': is_buyable,
+#         })
+
+#     return processed_data
+
+
+# # Asynchronous task to fetch and return Noon data for multiple queries
+# async def get_noon_prices(noon_queries):
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [fetch_noon_data(session, query) for query in noon_queries]
+#         responses = await asyncio.gather(*tasks)
+
+#         all_noon_data = []
+#         for response in responses:
+#             if response:
+#                 processed = process_noon_response(response)
+#                 all_noon_data.append(processed)
+#             else:
+#                 print("No response for query.")
+#                 all_noon_data.append([])
+
+#         return [
+#             {
+#                 'name': data[0]['name'] if data else None,
+#                 'price': data[0]['price'] if data else None,
+#                 'original_price': data[0]['original_price'] if data else None,
+#                 'is_buyable': data[0]['is_buyable'] if data else None,
+#             }
+#             for data in all_noon_data
+#         ]

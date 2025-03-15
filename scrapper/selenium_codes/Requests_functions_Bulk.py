@@ -520,65 +520,60 @@ async def fetch_noon_data(session, query, num_products):
         print(f"Error fetching data for query '{query}': {e}")
         return None
 
+
+# Function to process the Noon response
 # Function to process the Noon response
 def process_noon_response(data, query):
-    # print("Processing HTML content...")
+    if not data:
+        print(f"No data received for query '{query}'.")
+        return pd.DataFrame()
+
     soup = BeautifulSoup(data, 'html.parser')
-    script_tag = soup.find('script', id="__NEXT_DATA__", type="application/json")
     
-    if not script_tag:
-        print("Error: __NEXT_DATA__ script not found in the HTML.")
-        return []
-
-    try:
-        data = json.loads(script_tag.string)
-        # print("Successfully parsed JSON data.")
-    except json.JSONDecodeError:
-        print("Error: Failed to parse JSON data.")
-        return []
-
-    # # Print the entire JSON structure for debugging
-    # with open("debug_noon_data.json", "w", encoding="utf-8") as f:
-    #     json.dump(data, f, indent=4)
-    # print("JSON structure saved to 'debug_noon_data.json' for inspection.")
-
-    # Extract hits and facets
+    # Extract product details
+    products = soup.find_all('div', class_='ProductBoxVertical_wrapper__xPj_f')
     noon_data = []
-    hits = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('hits', [])
 
-    # print(f"Number of hits: {len(hits)}")
+    for product in products:
+        # Extract product name
+        product_name_tag = product.find('h2', class_='ProductDetailsSection_title__JorAV', attrs={'data-qa': 'product-name'})
+        product_name = product_name_tag['title'] if product_name_tag else None
+        
+        # Extract current price
+        current_price_tag = product.find('strong', class_='Price_amount__2sXa7')
+        current_price = current_price_tag.text if current_price_tag else None
+        current_price = float(current_price_tag.text.replace(',', '')) if current_price_tag else None
+ 
+        # Extract original price
+        original_price_tag = product.find('span', class_='Price_oldPrice__ZqD8B')
+        original_price = original_price_tag.text if original_price_tag else None
+        original_price = float(original_price_tag.text.replace(',', '')) if original_price_tag else None
 
-    for hit in hits:
-        name = hit.get('name')
-        price = hit.get('price')
-        original_price = hit.get('sale_price')
-
-        # Apply the coalesce logic to determine the effective price
-        if original_price is None:
-            effective_price = price
-            discount = 0
-        else:
-            effective_price = original_price
-            discount = (100 - (original_price/price)* 100  ) 
-
-
-
+        # Extract discount percentage
+        discount_tag = product.find('span', class_='PriceDiscount_discount__1ViHb')
+        discount = discount_tag.text if discount_tag else None
+        if discount:
+            discount = re.sub(r'[^0-9]', '', discount)
+        
+        # Extract SKU
+        sku_tag = product.find('a', class_='ProductBoxLinkHandler_productBoxLink__FPhjp')
+        sku = sku_tag['href'].split('/')[-2] if sku_tag else None
+        
+        # Check if the product is buyable
+        
         noon_data.append({
-            'name': name,
-            'price': price,
-            'sku': hit.get('sku', None),
+            'product_name': product_name,
+            'current_price': current_price,
             'original_price': original_price,
-            'calculated_price': round(effective_price, 2),  # Final effective price
-            'discount': round(discount, 2),  # Discount percentage
+            'discount': discount,
+            'sku': sku,
             'key': query  # Include the query as the key
-
         })
 
-    # print(f"Processed {len(processed_data)} items.")
     return pd.DataFrame(noon_data)  # Return DataFrame directly
 
 # Asynchronous task to fetch and return Noon data for multiple queries
-async def get_noon_details(noon_queries , num_products):
+async def get_noon_details(noon_queries, num_products):
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_noon_data(session, query, num_products) for query in noon_queries]
         responses = await asyncio.gather(*tasks)
@@ -588,8 +583,8 @@ async def get_noon_details(noon_queries , num_products):
         for data in all_noon_data:
             for entry in data.itertuples(index=False):
                 result.append({
-                    'name': entry.name,
-                    'price': entry.calculated_price,
+                    'name': entry.product_name,
+                    'price': entry.current_price,
                     'price_original': entry.original_price,
                     'discount': entry.discount,
                     'sku': entry.sku,
@@ -597,3 +592,85 @@ async def get_noon_details(noon_queries , num_products):
                 })
 
         return result
+
+
+# # Function to process the Noon response
+# def process_noon_response(data, query):
+#     # print("Processing HTML content...")
+#     soup = BeautifulSoup(data, 'html.parser')
+#     script_tag = soup.find('script', id="__NEXT_DATA__", type="application/json")
+    
+#     if not script_tag:
+#         print("Error: __NEXT_DATA__ script not found in the HTML.")
+#         return []
+
+#     try:
+#         data = json.loads(script_tag.string)
+#         # print("Successfully parsed JSON data.")
+#     except json.JSONDecodeError:
+#         print("Error: Failed to parse JSON data.")
+#         return []
+
+#     # # Print the entire JSON structure for debugging
+#     # with open("debug_noon_data.json", "w", encoding="utf-8") as f:
+#     #     json.dump(data, f, indent=4)
+#     # print("JSON structure saved to 'debug_noon_data.json' for inspection.")
+
+#     # Extract hits and facets
+#     noon_data = []
+#     hits = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('hits', [])
+
+#     # print(f"Number of hits: {len(hits)}")
+
+#     for hit in hits:
+#         name = hit.get('name')
+#         price = hit.get('price')
+#         original_price = hit.get('sale_price')
+
+#         # Apply the coalesce logic to determine the effective price
+#         if original_price is None:
+#             effective_price = price
+#             discount = 0
+#         else:
+#             effective_price = original_price
+#             discount = (100 - (original_price/price)* 100  ) 
+
+
+
+#         noon_data.append({
+#             'name': name,
+#             'price': price,
+#             'sku': hit.get('sku', None),
+#             'original_price': original_price,
+#             'calculated_price': round(effective_price, 2),  # Final effective price
+#             'discount': round(discount, 2),  # Discount percentage
+#             'key': query  # Include the query as the key
+
+#         })
+
+#     # print(f"Processed {len(processed_data)} items.")
+#     return pd.DataFrame(noon_data)  # Return DataFrame directly
+
+# # Asynchronous task to fetch and return Noon data for multiple queries
+# async def get_noon_details(noon_queries , num_products):
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [fetch_noon_data(session, query, num_products) for query in noon_queries]
+#         responses = await asyncio.gather(*tasks)
+#         all_noon_data = [process_noon_response(response, query) for (response, query) in responses]
+
+#         result = []
+#         for data in all_noon_data:
+#             for entry in data.itertuples(index=False):
+#                 result.append({
+#                     'name': entry.name,
+#                     'price': entry.calculated_price,
+#                     'price_original': entry.original_price,
+#                     'discount': entry.discount,
+#                     'sku': entry.sku,
+#                     'key': entry.key  # Add 'key' in the final result
+#                 })
+
+#         return result
+
+
+

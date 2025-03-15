@@ -441,9 +441,9 @@ def scrape_user_products_task(product_ids):
 
                 # Process fetched Noon data
                 if isinstance(noon_data, list) and noon_data:
-                    noon_titles = [item.get('name') for item in noon_data]
-                    noon_prices = [item.get('calculated_price') for item in noon_data]
-                    noon_availability_info = [item.get('availability_info') for item in noon_data]
+                    noon_titles = [item.get('product_name') for item in noon_data]
+                    noon_prices = [item.get('current_price') for item in noon_data]
+                    noon_availability_info = [item.get('is_buyable') for item in noon_data]
                     noon_original_prices = [item.get('original_price') for item in noon_data]
                     noon_sold_by = [item.get('sold_by', None) for item in noon_data]  # Optional field
                     noon_discount = [item.get('discount', None) for item in noon_data]  # Optional field
