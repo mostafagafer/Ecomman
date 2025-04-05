@@ -1,87 +1,95 @@
 from celery import shared_task
-from django.core.cache import cache
-from django.contrib.auth.models import User
-from client_profile.models import Profile
-from scrapper.models import ScrapedData, ScrapedBulkData
-from dashboard.utils import process_data  # Reuse the existing process function
-import json
+from .materialized_views import refresh_materialized_view
+
+# from django.core.cache import cache
+# from django.contrib.auth.models import User
+# from client_profile.models import Profile
+# from scrapper.models import ScrapedData, ScrapedBulkData
+# # from dashboard.utils import process_data  # Reuse the existing process function
+# import json
 # from datetime import datetime
 
+
 @shared_task
-def cache_user_data(user_id):
-    """
-    Task to pre-cache data for a specific user.
-    """
-    from django.contrib.auth.models import User
-    import logging
-    import json
-    from datetime import datetime
-    from django.core.cache import cache
-    import zlib  # For compressing data
+def refresh_materialized_views():
+    refresh_materialized_view('last_7_days_view')
+    refresh_materialized_view('last_30_days_view')
 
-    logger = logging.getLogger(__name__)
+# @shared_task
+# def cache_user_data(user_id):
+#     """
+#     Task to pre-cache data for a specific user.
+#     """
+#     from django.contrib.auth.models import User
+#     import logging
+#     import json
+#     from datetime import datetime
+#     from django.core.cache import cache
+#     import zlib  # For compressing data
 
-    try:
-        user = User.objects.get(id=user_id)
-        profile = Profile.objects.get(user=user)
+#     logger = logging.getLogger(__name__)
 
-        # Get user's products
-        user_products = profile.products.prefetch_related(
-            'accounts_id', 'brand', 'category', 'subcategory'
-        ).select_related('brand', 'category', 'subcategory')
+#     try:
+#         user = User.objects.get(id=user_id)
+#         profile = Profile.objects.get(user=user)
 
-        # Fetch `scraped_data` and `scraped_bulk_data`
-        scraped_data = ScrapedData.objects.filter(
-            product__in=user_products
-        ).select_related('product')
+#         # Get user's products
+#         user_products = profile.products.prefetch_related(
+#             'accounts_id', 'brand', 'category', 'subcategory'
+#         ).select_related('brand', 'category', 'subcategory')
 
-        categories = user_products.values_list('category__name', flat=True).distinct()
-        subcategories = user_products.values_list('subcategory__name', flat=True).distinct()
-        scraped_bulk_data = ScrapedBulkData.objects.filter(
-            key_name__in=list(categories) + list(subcategories)
-        )
+#         # Fetch `scraped_data` and `scraped_bulk_data`
+#         scraped_data = ScrapedData.objects.filter(
+#             product__in=user_products
+#         ).select_related('product')
 
-        logger.info(f"User {user_id}: {scraped_data.count()} scraped_data, {scraped_bulk_data.count()} scraped_bulk_data")
+#         categories = user_products.values_list('category__name', flat=True).distinct()
+#         subcategories = user_products.values_list('subcategory__name', flat=True).distinct()
+#         scraped_bulk_data = ScrapedBulkData.objects.filter(
+#             key_name__in=list(categories) + list(subcategories)
+#         )
 
-        # Process and cache data
-        try:
-            # Call the updated process_data function
-            compressed_data = process_data(scraped_data, scraped_bulk_data)
+#         logger.info(f"User {user_id}: {scraped_data.count()} scraped_data, {scraped_bulk_data.count()} scraped_bulk_data")
 
-            # Save to cache (overwrite existing data)
-            cache_key = f'dashboard_data_{user.id}'
-            cache.set(cache_key, compressed_data, timeout=7200)
-            logger.info(f"Successfully cached data for user {user.username}.")
-            return f"Cached data for user {user.username}."
-        except Exception as process_error:
-            logger.error(f"Error in process_data for user {user_id}: {process_error}")
-            raise
-    except Exception as e:
-        logger.error(f"Error caching data for user {user_id}: {str(e)}")
-        return f"Error caching data for user {user_id}: {str(e)}"
+#         # Process and cache data
+#         try:
+#             # Call the updated process_data function
+#             compressed_data = process_data(scraped_data, scraped_bulk_data)
+
+#             # Save to cache (overwrite existing data)
+#             cache_key = f'dashboard_data_{user.id}'
+#             cache.set(cache_key, compressed_data, timeout=7200)
+#             logger.info(f"Successfully cached data for user {user.username}.")
+#             return f"Cached data for user {user.username}."
+#         except Exception as process_error:
+#             logger.error(f"Error in process_data for user {user_id}: {process_error}")
+#             raise
+#     except Exception as e:
+#         logger.error(f"Error caching data for user {user_id}: {str(e)}")
+#         return f"Error caching data for user {user_id}: {str(e)}"
     
-@shared_task
-def caching_data():
-    """
-    Task to pre-cache data for all users.
-    """
-    from django.contrib.auth.models import User
-    import logging
-    logger = logging.getLogger(__name__)
+# @shared_task
+# def caching_data():
+#     """
+#     Task to pre-cache data for all users.
+#     """
+#     from django.contrib.auth.models import User
+#     import logging
+#     logger = logging.getLogger(__name__)
 
-    try:
-        users = User.objects.all()
-        logger.info(f"Starting cache update for {users.count()} users.")
+#     try:
+#         users = User.objects.all()
+#         logger.info(f"Starting cache update for {users.count()} users.")
 
-        for user in users:
-            logger.info(f"Processing cache for user {user.username} (ID: {user.id}).")
-            result = cache_user_data(user.id)
-            logger.info(f"Result for user {user.username} (ID: {user.id}): {result}")
+#         for user in users:
+#             logger.info(f"Processing cache for user {user.username} (ID: {user.id}).")
+#             result = cache_user_data(user.id)
+#             logger.info(f"Result for user {user.username} (ID: {user.id}): {result}")
 
-        return "Cache update completed for all users."
-    except Exception as e:
-        logger.error(f"Error during cache update for all users: {str(e)}")
-        return f"Error during cache update for all users: {str(e)}"
+#         return "Cache update completed for all users."
+#     except Exception as e:
+#         logger.error(f"Error during cache update for all users: {str(e)}")
+#         return f"Error during cache update for all users: {str(e)}"
 
 
 # Old function changed on 14/Jan

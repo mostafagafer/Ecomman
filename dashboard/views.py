@@ -7,13 +7,15 @@ from django.contrib.auth.decorators import login_required
 # from django.db.models.functions import Coalesce
 from .dash_apps.app import plot_dashboard
 import pandas as pd
-from scrapper.tasks import scrape_user_products_task, scrape_user_Bulk_product_task
-from dashboard.tasks import cache_user_data
+from scrapper.tasks import scrape_user_products_task ,scrape_user_Bulk_product_task
+# from dashboard.tasks import cache_user_data, refresh_materialized_views
+
+from dashboard.tasks import refresh_materialized_views
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from io import BytesIO
 import logging
-# from dashboard.utils import process_data, get_cached_data
+from dashboard.utils import get_materialized_view_data  # process_data, get_cached_data
 import json
 from django.core.cache import cache
 
@@ -38,8 +40,12 @@ def scrape_user_products_view(request):
         print('Scraping bulk products for user...')
         scrape_user_Bulk_product_task.delay(product_ids)
 
-        print('Caching data for user...')
-        cache_user_data.delay(request.user.id)
+        print('Refresh materialized view')
+        refresh_materialized_views.delay()
+
+        # print('Caching data for user...')
+        # cache_user_data.delay(request.user.id)
+
 
 
         # Notify the user
@@ -54,22 +60,18 @@ def scrape_user_products_view(request):
 @login_required
 def dashboard_view(request):
     try:
-        # Use caching
-        cache_key = f'dashboard_data_{request.user.id}'
-        cached_data = cache.get(cache_key)
-
-        if not cached_data:
-            return JsonResponse(
-                {"error": "Am error occour please try again later, we are working on it."},
-                status=400
-            )
-
-        # Pass cached data directly to Plotly Dash
+        # Get user profile and account names
         profile = Profile.objects.get(user=request.user)
         account_names = list(
             profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
         )
-        plot_dashboard(cached_data, account_names)
+        
+        # Default to last week data initially
+        initial_period = "last_week"
+        df = get_materialized_view_data(initial_period)
+        
+        # Pass data to Plotly Dash
+        plot_dashboard(df, account_names)
         context = {
             'segment': 'dashboard_view',
 
@@ -80,6 +82,37 @@ def dashboard_view(request):
     except Exception as e:
         print(f"Error in dashboard_view: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# @login_required
+# def dashboard_view(request):
+#     try:
+#         # Use caching
+#         cache_key = f'dashboard_data_{request.user.id}'
+#         cached_data = cache.get(cache_key)
+
+#         if not cached_data:
+#             return JsonResponse(
+#                 {"error": "Am error occour please try again later, we are working on it."},
+#                 status=400
+#             )
+
+#         # Pass cached data directly to Plotly Dash
+#         profile = Profile.objects.get(user=request.user)
+#         account_names = list(
+#             profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+#         )
+#         plot_dashboard(cached_data, account_names)
+#         context = {
+#             'segment': 'dashboard_view',
+
+#         }
+#         return render(request, 'dashboard/dashboard.html', context)
+
+
+#     except Exception as e:
+#         print(f"Error in dashboard_view: {e}")
+#         return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -154,8 +187,9 @@ def price(request):
         # Get all scraped data where scraped_at is the max date for each product (fetch model instances)
         max_scraped_data = ScrapedData.objects.filter(
             scraped_at=Subquery(max_date_subquery),
-            product__in=filtered_products
+            product__in=filtered_products.filter(is_competitor=False)  # Ensure only non-competitor products
         ).select_related('product')
+
 
         # Get user accounts and filter out None values
         user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)

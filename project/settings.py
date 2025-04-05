@@ -28,6 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
 
+DATABASE_URL = env('DATABASE_URL')
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 if ENVIRONMENT == 'development':
     DEBUG = True
@@ -158,13 +161,25 @@ DATABASES = {
     }
 }
 
-POSTGRES_LOCALLY = False
-if ENVIRONMENT == 'production' or POSTGRES_LOCALLY:
-    DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
+# POSTGRES_LOCALLY = True
+# if ENVIRONMENT == 'production' or POSTGRES_LOCALLY:
+#     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
+#     DATABASES['default']['OPTIONS'] = {
+#         'connect_timeout': 10,
+#         'options': '-c statement_timeout=15000'
+#     } 
+
+# # Supabase PostgresDB
+
+SUPABASE_URL = env('SUPABASE_URL')
+
+POSTGRES_LOCALLY = True
+if ENVIRONMENT == 'development' or POSTGRES_LOCALLY:
+    DATABASES['default'] = dj_database_url.parse(env('SUPABASE_URL'))
     DATABASES['default']['OPTIONS'] = {
         'connect_timeout': 10,
         'options': '-c statement_timeout=15000'
-    } 
+} 
 
 # DATABASES = {
 #     'default': {
@@ -252,6 +267,10 @@ CELERY_BEAT_SCHEDULE = {
     'bulk-scrape-every-12-hours': {
         'task': 'scrapper.tasks.scheduled_bulk_scraper',
         'schedule': 43200.0,  # 12 hours
+    },
+        'refresh-materialized-view-24-hours': { 
+        'task': 'dashboard.tasks.refresh_materialized_views', 
+        'schedule': 86400.0,  # 24 hours
     },
         'cache-data-every-24-hours': { 
         'task': 'dashboard.tasks.caching_data', 

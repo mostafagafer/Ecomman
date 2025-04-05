@@ -281,6 +281,7 @@ async def get_amazon_details(amazon_queries, num_products):
 
 async def fetch_dawa_data(session, query, num_products):
     query_updated = query.replace(" ", "%20")
+    query_updated = query_updated.replace("&", "%20")
     url = 'https://l1p3f2vbnf-3.algolianet.com/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.13.1)%3B%20Browser%3B%20instantsearch.js%20(4.41.0)%3B%20Magento2%20integration%20(3.10.5)%3B%20JS%20Helper%20(3.8.2)'
     headers = {
         'Accept': '*/*',
@@ -377,6 +378,7 @@ async def get_dawa_details(dawa_queries, num_products):
 
 async def fetch_nahdi_data(session, query, num_products):
     query_updated = query.replace(" ", "%20")
+    query_updated = query_updated.replace("&", "%20")
     url = 'https://h9x4ih7m99-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.14.3)%3B%20Browser%3B%20instantsearch.js%20(4.63.0)%3B%20Magento2%20integration%20(3.13.3)%3B%20JS%20Helper%20(3.16.1)'
     headers = {
         'Accept': '*/*',
@@ -520,8 +522,6 @@ async def fetch_noon_data(session, query, num_products):
         print(f"Error fetching data for query '{query}': {e}")
         return None
 
-
-# Function to process the Noon response
 # Function to process the Noon response
 def process_noon_response(data, query):
     if not data:
@@ -592,85 +592,4 @@ async def get_noon_details(noon_queries, num_products):
                 })
 
         return result
-
-
-# # Function to process the Noon response
-# def process_noon_response(data, query):
-#     # print("Processing HTML content...")
-#     soup = BeautifulSoup(data, 'html.parser')
-#     script_tag = soup.find('script', id="__NEXT_DATA__", type="application/json")
-    
-#     if not script_tag:
-#         print("Error: __NEXT_DATA__ script not found in the HTML.")
-#         return []
-
-#     try:
-#         data = json.loads(script_tag.string)
-#         # print("Successfully parsed JSON data.")
-#     except json.JSONDecodeError:
-#         print("Error: Failed to parse JSON data.")
-#         return []
-
-#     # # Print the entire JSON structure for debugging
-#     # with open("debug_noon_data.json", "w", encoding="utf-8") as f:
-#     #     json.dump(data, f, indent=4)
-#     # print("JSON structure saved to 'debug_noon_data.json' for inspection.")
-
-#     # Extract hits and facets
-#     noon_data = []
-#     hits = data.get('props', {}).get('pageProps', {}).get('catalog', {}).get('hits', [])
-
-#     # print(f"Number of hits: {len(hits)}")
-
-#     for hit in hits:
-#         name = hit.get('name')
-#         price = hit.get('price')
-#         original_price = hit.get('sale_price')
-
-#         # Apply the coalesce logic to determine the effective price
-#         if original_price is None:
-#             effective_price = price
-#             discount = 0
-#         else:
-#             effective_price = original_price
-#             discount = (100 - (original_price/price)* 100  ) 
-
-
-
-#         noon_data.append({
-#             'name': name,
-#             'price': price,
-#             'sku': hit.get('sku', None),
-#             'original_price': original_price,
-#             'calculated_price': round(effective_price, 2),  # Final effective price
-#             'discount': round(discount, 2),  # Discount percentage
-#             'key': query  # Include the query as the key
-
-#         })
-
-#     # print(f"Processed {len(processed_data)} items.")
-#     return pd.DataFrame(noon_data)  # Return DataFrame directly
-
-# # Asynchronous task to fetch and return Noon data for multiple queries
-# async def get_noon_details(noon_queries , num_products):
-#     async with aiohttp.ClientSession() as session:
-#         tasks = [fetch_noon_data(session, query, num_products) for query in noon_queries]
-#         responses = await asyncio.gather(*tasks)
-#         all_noon_data = [process_noon_response(response, query) for (response, query) in responses]
-
-#         result = []
-#         for data in all_noon_data:
-#             for entry in data.itertuples(index=False):
-#                 result.append({
-#                     'name': entry.name,
-#                     'price': entry.calculated_price,
-#                     'price_original': entry.original_price,
-#                     'discount': entry.discount,
-#                     'sku': entry.sku,
-#                     'key': entry.key  # Add 'key' in the final result
-#                 })
-
-#         return result
-
-
 
