@@ -161,25 +161,22 @@ DATABASES = {
     }
 }
 
-# POSTGRES_LOCALLY = True
-# if ENVIRONMENT == 'production' or POSTGRES_LOCALLY:
-#     DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
-#     DATABASES['default']['OPTIONS'] = {
-#         'connect_timeout': 10,
-#         'options': '-c statement_timeout=15000'
-#     } 
-
-# # Supabase PostgresDB
-
-SUPABASE_URL = env('SUPABASE_URL')
-
 POSTGRES_LOCALLY = True
-if ENVIRONMENT == 'development' or POSTGRES_LOCALLY:
-    DATABASES['default'] = dj_database_url.parse(env('SUPABASE_URL'))
+if ENVIRONMENT == 'production' or POSTGRES_LOCALLY:
+    DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
     DATABASES['default']['OPTIONS'] = {
         'connect_timeout': 10,
         'options': '-c statement_timeout=15000'
-} 
+    } 
+
+# # Supabase PostgresDB
+# POSTGRES_LOCALLY = True
+# if ENVIRONMENT == 'development' or POSTGRES_LOCALLY:
+#     DATABASES['default'] = dj_database_url.parse(env('SUPABASE_URL'))
+#     DATABASES['default']['OPTIONS'] = {
+#         'connect_timeout': 10,
+#         'options': '-c statement_timeout=15000'
+# } 
 
 # DATABASES = {
 #     'default': {
