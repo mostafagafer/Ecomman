@@ -269,10 +269,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'dashboard.tasks.refresh_materialized_views', 
         'schedule': 86400.0,  # 24 hours
     },
-        'cache-data-every-24-hours': { 
-        'task': 'dashboard.tasks.caching_data', 
-        'schedule': 86400.0,  # 24 hours
-    },
+    #     'cache-data-every-24-hours': { 
+    #     'task': 'dashboard.tasks.caching_data', 
+    #     'schedule': 86400.0,  # 24 hours
+    # },
 
 }
 

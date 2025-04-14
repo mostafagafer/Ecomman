@@ -4,30 +4,6 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# from pathlib import Path
-# import os
-# from environ import Env
-
-# # Get path to .env (up from /dashboard to project root)
-# BASE_DIR = Path(__file__).resolve().parent.parent
-# ENV_PATH = BASE_DIR / "project/.env"
-
-
-# # Load env file
-# env = Env()
-# if ENV_PATH.exists():
-#     env.read_env(str(ENV_PATH))
-# else:
-#     print("❌ .env file not found!")
-#     exit(1)
-
-# # Try to read the variable
-# try:
-#     DATABASE_URL = env("DATABASE_URL")
-# except Exception as e:
-#     print("❌ Could not read DATABASE_URL:", e)
-
-
 import os
 import sys
 
@@ -52,7 +28,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Extract Supabase URL from environment variables
-# "postgresql://postgres.rcbqpbokrxozbislevtb:Ecomman_123@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
 if not DATABASE_URL:
     logger.error("DATABASE_URL environment variable not set")
     raise ValueError("DATABASE_URL environment variable not set")
