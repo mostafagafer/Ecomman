@@ -1,0 +1,47 @@
+<a class="product-row" href="{% url 'client_profile:product_detail' product.id %}">
+  <div class="product-main">
+    <div class="product-thumb">
+      {% with photo=product.photos.first %}
+        {% if photo %}
+          <img src="{{ photo.image.url }}" alt="{{ product.product_name }}">
+        {% else %}
+          <i class="fas fa-box"></i>
+        {% endif %}
+      {% endwith %}
+    </div>
+    <div>
+      <h3 class="product-title">{{ product.product_name }}</h3>
+      <p class="product-meta">
+        {% if product.is_competitor %}
+          Competitor product
+          {% if product.competitor_references.exists %}
+            · linked to {{ product.competitor_references.count }} product{{ product.competitor_references.count|pluralize }}
+          {% endif %}
+        {% else %}
+          {{ product.brand|default:"No brand" }}{% if product.category %} · {{ product.category }}{% endif %}{% if product.subcategory %} · {{ product.subcategory }}{% endif %}
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <span class="product-cell-label">Category</span>
+    <span class="product-cell-value">{{ product.category|default:"-" }}</span>
+  </div>
+
+  <div>
+    <span class="product-cell-label">Price</span>
+    <span class="product-cell-value">{{ product.RSP|default:"-" }}{% if product.RSP_VAT %} / {{ product.RSP_VAT }} VAT{% endif %}</span>
+  </div>
+
+  <div>
+    <span class="product-cell-label">Channels</span>
+    <span class="product-channels">
+      {% for channel in product.channels.all %}
+        <span class="product-chip">{{ channel.display_name }}</span>
+      {% empty %}
+        <span class="product-cell-value">-</span>
+      {% endfor %}
+    </span>
+  </div>
+</a>

@@ -2,120 +2,198 @@
 {% load static %}
 
 {% block content %}
+<style>
+  .products-page {
+    display: grid;
+    gap: 24px;
+  }
+  .products-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: center;
+    padding: 28px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #faf5ff 0%, #ffffff 52%, #eef2ff 100%);
+    border: 1px solid #d8e2dc;
+    box-shadow: 0 18px 45px rgba(28, 49, 43, 0.08);
+  }
+  .products-hero h1 {
+    margin: 0 0 8px;
+    color: #172033;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .products-hero p {
+    margin: 0;
+    max-width: 70ch;
+    color: #5f6d7e;
+    line-height: 1.65;
+  }
+  .product-section {
+    display: grid;
+    gap: 14px;
+  }
+  .product-section-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .product-section-header h2 {
+    margin: 0;
+    color: #172033;
+    font-size: 1.35rem;
+  }
+  .product-section-header span {
+    color: #64748b;
+    font-size: .9rem;
+  }
+  .product-list {
+    display: grid;
+    gap: 12px;
+  }
+  .product-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(160px, .8fr) minmax(130px, .55fr) minmax(150px, .65fr);
+    gap: 18px;
+    align-items: center;
+    padding: 18px;
+    border: 1px solid #d8e2dc;
+    border-radius: 16px;
+    background: #ffffff;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(28, 49, 43, 0.06);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .product-row:hover {
+    transform: translateY(-2px);
+    border-color: #cb0c9f;
+    box-shadow: 0 18px 42px rgba(203, 12, 159, 0.12);
+    color: inherit;
+    text-decoration: none;
+  }
+  .product-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+  .product-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: #faf5ff;
+    overflow: hidden;
+  }
+  .product-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .product-thumb i {
+    color: #cb0c9f;
+    font-size: 1.2rem;
+  }
+  .product-title {
+    margin: 0 0 6px;
+    color: #172033;
+    font-weight: 800;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+  .product-meta {
+    margin: 0;
+    color: #64748b;
+    font-size: .86rem;
+    line-height: 1.45;
+  }
+  .product-cell-label {
+    display: block;
+    color: #94a3b8;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .product-cell-value {
+    color: #243044;
+    font-size: .92rem;
+    font-weight: 700;
+  }
+  .product-channels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .product-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: .74rem;
+    font-weight: 800;
+  }
+  .empty-state {
+    padding: 22px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    color: #64748b;
+    background: #f8fafc;
+  }
+  @media (max-width: 992px) {
+    .products-hero { align-items: flex-start; flex-direction: column; }
+    .product-row { grid-template-columns: 1fr; }
+  }
+</style>
 
-<div class="container-fluid">
+<div class="container-fluid py-4 products-page">
+  <section class="products-hero">
+    <div>
+      <h1>Products</h1>
+      <p>Review your product universe in two clear groups: products you own and competitor products tied to your catalog. Click any row to open the full product details.</p>
+    </div>
+    <a href="{% url 'client_profile:product_create' %}" class="btn bg-gradient-primary mb-0">Add New Product</a>
+  </section>
 
-
-<div class="row my-4">
-    <div class="col-lg-12 col-md-12">
-      <div class="card">
-        <div class="card-header pb-0">
-          <div class="row">
-            <div class="col-lg-6 col-7">
-              <h6>My products</h6>
-              <p class="text-sm mb-0">
-                <span class="font-weight-bold ms-1">{{ products.count }} </span> products in my radar list
-              </p>
-            </div>
-
-          </div>
-        </div>
-        <div class="card-body px-0 pb-2">
-          <div class="table-responsive">
-            <table class="table align-items-center mb-0">
-              <thead>
-                <tr>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Title</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Category</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Subcategory</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Images</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">RSV|RSV+VAT</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Edit</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for product in products %}
-
-                <tr>
-                  <td>
-                    <div class="d-flex px-2 py-1">
-
-                      <div class="d-flex flex-column justify-content-center">
-                        <h6 class="mb-0 text-sm">{{product.TITLE}}</h6>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td>
-                    <div class="d-flex px-2 py-1">
-
-                      <div class="d-flex flex-column justify-content-center">
-                        <h6 class="mb-0 text-sm">{{product.category}}</h6>
-                      </div>
-                    </div>
-                  </td>
-
-
-                  <td>
-                    <div class="d-flex px-2 py-1">
-
-                      <div class="d-flex flex-column justify-content-center">
-                        <h6 class="mb-0 text-sm">{{product.subcategory}}</h6>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td>
-
-                    <div class="avatar-group mt-2">
-                        {% for photo in product.photos.all %}
-                            <a href="javascript:;" class="avatar avatar-xs rounded-circle" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ photo.image_description }}">
-                                <img src="{{ photo.image.url }}" alt="photo">
-                            </a>
-                        {% endfor %}
-                    </div>
-                
-
-                  </td>
-                  <td >
-                    <span class="text-xs font-weight-bold"> {{product.RSP}}</span>
-                    <br>
-                    <span class="text-xs">{{ product.RSP_VAT }}</span>
-        
-                  </td>
-                  <td class="align-middle text-center text-sm">
-                    <div >
-
-                      <div class="d-flex flex-column justify-content-center">
-                        <a href="#">Edit</a>
-
-                      </div>
-                    </div>
-                  </td>
-                  <td class="align-middle text-center text-sm">
-                    <div >
-
-                      <div class="d-flex flex-column justify-content-center">
-                        <a href="#">details</a>
-
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-
-              </tbody>
-            </table>
-          </div>
-        </div>
+  <section class="product-section">
+    <div class="product-section-header">
+      <div>
+        <h2>My products</h2>
+        <span>{{ my_products.count }} products you actively monitor</span>
       </div>
     </div>
+    <div class="product-list">
+      {% for product in my_products %}
+        {% include 'client_profile/product_row.html' with product=product %}
+      {% empty %}
+        <div class="empty-state">No owned products yet. Add your first product to start building your market view.</div>
+      {% endfor %}
+    </div>
+  </section>
 
-  </div>
-
-    <a href="{% url 'client_profile:product_create' %}"class="btn btn-primary">Add New Product</a>
-
+  <section class="product-section">
+    <div class="product-section-header">
+      <div>
+        <h2>Competitors</h2>
+        <span>{{ competitor_products.count }} competitor products connected to your catalog</span>
+      </div>
+    </div>
+    <div class="product-list">
+      {% for product in competitor_products %}
+        {% include 'client_profile/product_row.html' with product=product %}
+      {% empty %}
+        <div class="empty-state">No competitor products yet. Add competitor records and tie them to your products for comparison.</div>
+      {% endfor %}
+    </div>
+  </section>
 </div>
-
 {% endblock content %}

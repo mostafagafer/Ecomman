@@ -1,0 +1,142 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecomman_backend_prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8002:8000"
+    env_file:
+      - project/.env
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      CSRF_TRUSTED_ORIGINS: ""
+      SECURE_SSL_REDIRECT: "True"
+      SESSION_COOKIE_SECURE: "True"
+      CSRF_COOKIE_SECURE: "True"
+      USE_PROD_DB: "True"
+      STORAGE_ROOT: "/app/Ecomman"
+      COLLECT_STATIC: "1"
+      RUN_MIGRATIONS: "1"
+      REDIS_URL: "redis://redis:6379/2"
+      CHANNEL_REDIS_URL: "redis://redis:6379/2"
+      CELERY_BROKER_URL: "redis://redis:6379/2"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      DJANGO_CACHE_URL: "redis://redis:6379/2"
+      REDIS_KEY_PREFIX: "ecomman:prod"
+      CELERY_TASK_DEFAULT_QUEUE: "default"
+      CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+      CELERY_RESULT_EXPIRES: "3600"
+      CELERY_TASK_IGNORE_RESULT: "True"
+      LOG_LEVEL: "INFO"
+      CELERY_LOG_LEVEL: "INFO"
+    networks:
+      - ecomman_network
+      - shared_backend_network
+    volumes:
+      - static_volume:/app/staticfiles
+      - ./media:/app/Ecomman/media
+    healthcheck:
+      test: ["CMD", "curl", "-fsSL", "-H", "X-Forwarded-Proto: https", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecomman_celery_prod
+    restart: unless-stopped
+    env_file:
+      - project/.env
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      CSRF_TRUSTED_ORIGINS: ""
+      SECURE_SSL_REDIRECT: "True"
+      SESSION_COOKIE_SECURE: "True"
+      CSRF_COOKIE_SECURE: "True"
+      USE_PROD_DB: "True"
+      STORAGE_ROOT: "/app/Ecomman"
+      COLLECT_STATIC: "0"
+      RUN_MIGRATIONS: "0"
+      REDIS_URL: "redis://redis:6379/2"
+      CHANNEL_REDIS_URL: "redis://redis:6379/2"
+      CELERY_BROKER_URL: "redis://redis:6379/2"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      DJANGO_CACHE_URL: "redis://redis:6379/2"
+      REDIS_KEY_PREFIX: "ecomman:prod"
+      CELERY_TASK_DEFAULT_QUEUE: "default"
+      CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+      CELERY_RESULT_EXPIRES: "3600"
+      CELERY_TASK_IGNORE_RESULT: "True"
+      LOG_LEVEL: "INFO"
+      CELERY_LOG_LEVEL: "INFO"
+    command: ["celery", "-A", "project", "worker", "-l", "INFO", "-Q", "default,scraping,maintenance", "--concurrency=1"]
+    networks:
+      - ecomman_network
+      - shared_backend_network
+    volumes:
+      - ./media:/app/Ecomman/media
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A project inspect ping -d celery@$$(hostname)"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 60s
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecomman_celery_beat_prod
+    restart: unless-stopped
+    env_file:
+      - project/.env
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      CSRF_TRUSTED_ORIGINS: ""
+      SECURE_SSL_REDIRECT: "True"
+      SESSION_COOKIE_SECURE: "True"
+      CSRF_COOKIE_SECURE: "True"
+      USE_PROD_DB: "True"
+      STORAGE_ROOT: "/app/Ecomman"
+      COLLECT_STATIC: "0"
+      RUN_MIGRATIONS: "0"
+      REDIS_URL: "redis://redis:6379/2"
+      CHANNEL_REDIS_URL: "redis://redis:6379/2"
+      CELERY_BROKER_URL: "redis://redis:6379/2"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      DJANGO_CACHE_URL: "redis://redis:6379/2"
+      REDIS_KEY_PREFIX: "ecomman:prod"
+      CELERY_TASK_DEFAULT_QUEUE: "default"
+      CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+      CELERY_RESULT_EXPIRES: "3600"
+      CELERY_TASK_IGNORE_RESULT: "True"
+      LOG_LEVEL: "INFO"
+      CELERY_LOG_LEVEL: "INFO"
+    command: ["celery", "-A", "project", "beat", "-l", "INFO", "--schedule", "/app/Ecomman/celerybeat/celerybeat-schedule"]
+    networks:
+      - ecomman_network
+      - shared_backend_network
+    volumes:
+      - ./media:/app/Ecomman/media
+      - celerybeat_volume:/app/Ecomman/celerybeat
+
+volumes:
+  static_volume:
+  celerybeat_volume:
+
+networks:
+  ecomman_network:
+    driver: bridge
+  shared_backend_network:
+    external: true

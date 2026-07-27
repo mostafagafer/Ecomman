@@ -1,16 +1,11 @@
-<!-- product_edit_form.html -->
 {% extends 'layouts/base.html' %}
+{% load static %}
 
 {% block content %}
-<!-- !-- product_edit_form.html -->
-<form method="POST" enctype="multipart/form-data">
+<div class="container-fluid py-4">
+  <form method="POST" enctype="multipart/form-data" action="{% url 'client_profile:product_edit' product.id %}" class="product-wizard" id="productWizard">
     {% csrf_token %}
-    {{ product_form.as_p }}
-    {{ account_link_formset.management_form }}
-    {{ account_link_formset.as_p }}
-    {{ photo_formset.management_form }}
-    {{ photo_formset.as_p }}
-    <button type="submit">Save</button>
-</form>
-
+    {% include 'client_profile/product_wizard_fields.html' with mode='edit' %}
+  </form>
+</div>
 {% endblock %}

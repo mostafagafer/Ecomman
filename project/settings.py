@@ -12,15 +12,22 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import quote
+from datetime import timedelta
 from environ import Env
 import dj_database_url
-env = Env()
 
-Env.read_env()
-ENVIRONMENT = env('ENVIRONMENT', default='development')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = Env(
+    DEBUG=(bool, False),
+)
+ENV_FILE = BASE_DIR / "project" / ".env"
+if ENV_FILE.exists():
+    Env.read_env(ENV_FILE)
+
+ENVIRONMENT = env('ENVIRONMENT', default='development')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -28,19 +35,52 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
 
-DATABASE_URL = env('DATABASE_URL')
-
-
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIRONMENT == 'development':
-    DEBUG = True
-else:   
-    DEBUG = False
+DEBUG = env.bool("DEBUG", default=ENVIRONMENT == 'development')
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ecomman.up.railway.app']
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=['localhost', '127.0.0.1'],
+)
+ADMIN_URL = env("ADMIN_URL", default="admin/")
 
-CSRF_TRUSTED_ORIGINS  = ['https://ecomman.up.railway.app']
+CSRF_TRUSTED_ORIGINS = [
+    origin for origin in env.list(
+        "CSRF_TRUSTED_ORIGINS",
+        default=[],
+    )
+    if origin
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31536000 if not DEBUG else 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+SESSION_COOKIE_HTTPONLY = env.bool("SESSION_COOKIE_HTTPONLY", default=True)
+SESSION_COOKIE_SAMESITE = env("SESSION_COOKIE_SAMESITE", default="Lax")
+ADMIN_SESSION_COOKIE_NAME = env("ADMIN_SESSION_COOKIE_NAME", default="admin_sessionid")
+CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
+CONTENT_SECURITY_POLICY_REPORT_ONLY = env.bool("CONTENT_SECURITY_POLICY_REPORT_ONLY", default=True)
+CONTENT_SECURITY_POLICY = env(
+    "CONTENT_SECURITY_POLICY",
+    default=(
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "object-src 'none'"
+    ),
+)
+CROSS_ORIGIN_RESOURCE_POLICY = env("CROSS_ORIGIN_RESOURCE_POLICY", default="same-origin")
 
 # Application definition
 
@@ -54,6 +94,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     
     #Installed_apps
     'django_celery_results',
@@ -77,6 +119,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'project.admin_session.AdminSessionCookieMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -84,6 +127,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     #whitenoise for staticfile
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "project.security_headers.SecurityHeadersMiddleware",
 
     # Plotlydash
     'django_plotly_dash.middleware.BaseMiddleware',
@@ -101,7 +145,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],  # Use 127.0.0.1 instead of localhost
+            "hosts": [env('CHANNEL_REDIS_URL', default=env('REDIS_URL', default='redis://127.0.0.1:6379/2'))],
         },
     },
 }
@@ -154,40 +198,38 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+USE_PROD_DB = env.bool("USE_PROD_DB", default=False)
+PROD_DB_URL = env("PROD_DB_URL", default="")
+LOCAL_DB_NAME = env("LOCAL_DB_NAME", default="Ecomman_local")
+LOCAL_DB_USER = env("LOCAL_DB_USER", default="postgres")
+LOCAL_DB_PASSWORD = env("LOCAL_DB_PASSWORD", default="")
+LOCAL_DB_HOST = env("LOCAL_DB_HOST", default="127.0.0.1")
+LOCAL_DB_PORT = env("LOCAL_DB_PORT", default="5432")
+
+if USE_PROD_DB and PROD_DB_URL:
+    DATABASE_URL = PROD_DB_URL
+    DATABASES = {
+        "default": dj_database_url.parse(
+            PROD_DB_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
-
-POSTGRES_LOCALLY = True
-if ENVIRONMENT == 'production' or POSTGRES_LOCALLY:
-    DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
-    DATABASES['default']['OPTIONS'] = {
-        'connect_timeout': 10,
-        'options': '-c statement_timeout=15000'
-    } 
-
-# # Supabase PostgresDB
-# POSTGRES_LOCALLY = True
-# if ENVIRONMENT == 'development' or POSTGRES_LOCALLY:
-#     DATABASES['default'] = dj_database_url.parse(env('SUPABASE_URL'))
-#     DATABASES['default']['OPTIONS'] = {
-#         'connect_timeout': 10,
-#         'options': '-c statement_timeout=15000'
-# } 
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'your_db_name',
-#         'USER': 'your_db_user',
-#         'PASSWORD': 'your_db_password',
-#         'HOST': 'your_db_host',
-#         'PORT': 'your_db_port',
-#     }
-# }
+else:
+    DATABASE_URL = (
+        f"postgresql://{quote(LOCAL_DB_USER)}:{quote(LOCAL_DB_PASSWORD)}"
+        f"@{LOCAL_DB_HOST}:{LOCAL_DB_PORT}/{quote(LOCAL_DB_NAME)}"
+    )
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": LOCAL_DB_NAME,
+            "USER": LOCAL_DB_USER,
+            "PASSWORD": LOCAL_DB_PASSWORD,
+            "HOST": LOCAL_DB_HOST,
+            "PORT": LOCAL_DB_PORT,
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -234,8 +276,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE="whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = '/media/'
+STORAGE_ROOT = Path(env('STORAGE_ROOT', default=str(BASE_DIR)).strip() or str(BASE_DIR)).resolve()
+MEDIA_ROOT = STORAGE_ROOT / 'media'
 if ENVIRONMENT == 'development':
-    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+    pass
 else:
     DEFAULT_FILE_STORAGE= 'cloudinary_storage.storage.MediaCloudinaryStorage'
     CLOUDINARY_STORAGE =  {'CLOUDINARY_URL': env('CLOUDINARY_URL')}
@@ -245,15 +289,58 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+AUTHENTICATION_BACKENDS = [
+    "admin_soft.authentication.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+        "login": "5/min",
+        "register": "5/hour",
+        "email_verification": "5/hour",
+        "password_reset": "5/hour",
+    },
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+LOGIN_LOCKOUT_FAILURE_LIMIT = env.int("LOGIN_LOCKOUT_FAILURE_LIMIT", default=5)
+LOGIN_LOCKOUT_MINUTES = env.int("LOGIN_LOCKOUT_MINUTES", default=15)
+EMAIL_VERIFICATION_OTP_MINUTES = env.int("EMAIL_VERIFICATION_OTP_MINUTES", default=10)
+
 
 # Celery settings
 
-if ENVIRONMENT == 'development':
-    CELERY_BROKER_URL = 'redis://localhost:6379'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379'
-else:
-    CELERY_BROKER_URL = env('REDIS_URL')
-    CELERY_RESULT_BACKEND = env('REDIS_URL')
+REDIS_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/2')
+CHANNEL_REDIS_URL = env('CHANNEL_REDIS_URL', default=REDIS_URL)
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=REDIS_URL)
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default=REDIS_URL)
+CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE', default='default')
+CELERY_TASK_ROUTES = {
+    'scrapper.tasks.scheduled_products_scraper': {'queue': 'scraping'},
+    'scrapper.tasks.scheduled_bulk_scraper': {'queue': 'scraping'},
+    'scrapper.tasks.scrape_user_products_task': {'queue': 'scraping'},
+    'scrapper.tasks.scrape_user_Bulk_product_task': {'queue': 'scraping'},
+    'dashboard.tasks.refresh_materialized_views': {'queue': 'maintenance'},
+}
+CELERY_TASK_CREATE_MISSING_QUEUES = True
 
 
 CELERY_BEAT_SCHEDULE = {
@@ -280,56 +367,74 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Cairo'
+CELERY_ENABLE_UTC = True
 
 
 CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = env.int('CELERY_WORKER_PREFETCH_MULTIPLIER', default=1)
+CELERY_TASK_SOFT_TIME_LIMIT = env.int('CELERY_TASK_SOFT_TIME_LIMIT', default=120)
+CELERY_TASK_TIME_LIMIT = env.int('CELERY_TASK_TIME_LIMIT', default=180)
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-#  Logging configuration
+CELERY_RESULT_EXPIRES = env.int('CELERY_RESULT_EXPIRES', default=3600)
+CELERY_TASK_IGNORE_RESULT = env.bool('CELERY_TASK_IGNORE_RESULT', default=True)
+
+LOG_LEVEL = env('LOG_LEVEL', default='INFO')
+DJANGO_LOG_LEVEL = env('DJANGO_LOG_LEVEL', default=LOG_LEVEL)
+CELERY_LOG_LEVEL = env('CELERY_LOG_LEVEL', default=LOG_LEVEL)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-        },
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'celery_beat.log',
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s %(levelname)s [%(name)s] %(message)s',
         },
     },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': DJANGO_LOG_LEVEL,
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': CELERY_LOG_LEVEL,
+            'propagate': False,
+        },
         'celery.beat': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
+            'handlers': ['console'],
+            'level': CELERY_LOG_LEVEL,
+            'propagate': False,
         },
     },
 }
-CELERY_TASK_TIME_LIMIT = 30 * 60
 
 # Chaches configuratio
-if ENVIRONMENT == 'development':
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': 'redis://localhost:6379/1',
-        }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': env('DJANGO_CACHE_URL', default=REDIS_URL),
+        'KEY_PREFIX': env('REDIS_KEY_PREFIX', default='ecomman:local'),
     }
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': env('REDIS_URL'),
-        }
-    }
+}
 
 
 LOGIN_REDIRECT_URL = 'dashboard:index' #'accounts:profile'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 # LOGIN_URL = 'accounts:login'
 
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://127.0.0.1:8000")
 
 # Contact model
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -338,5 +443,14 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
+EMAIL_FROM_NAME = env("EMAIL_FROM_NAME", default="Ecomman")
+EMAIL_BRAND_NAME = env("EMAIL_BRAND_NAME", default="Ecomman")
+EMAIL_WEBSITE_URL = env("EMAIL_WEBSITE_URL", default=FRONTEND_BASE_URL)
+EMAIL_LOGO_URL = env("EMAIL_LOGO_URL", default=f"{FRONTEND_BASE_URL.rstrip('/')}{STATIC_URL}img/logos/ECOM_logo.svg")
+EMAIL_SOCIAL_LINKEDIN_URL = env("EMAIL_SOCIAL_LINKEDIN_URL", default="")
+EMAIL_SOCIAL_FACEBOOK_URL = env("EMAIL_SOCIAL_FACEBOOK_URL", default="")
+SUPPORT_EMAIL = env("SUPPORT_EMAIL", default=DEFAULT_FROM_EMAIL)
+
 
 

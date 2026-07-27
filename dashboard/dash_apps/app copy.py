@@ -158,9 +158,9 @@ def plot_dashboard(df, user_accounts):
             # Fetch the competitor references for the selected product
             from client_profile.models import Product
             try:
-                product_instance = Product.objects.get(TITLE=product)
+                product_instance = Product.objects.get(product_name=product)
                 competitor_references = product_instance.competitor_references.all()
-                competitor_reference_titles = [ref.TITLE for ref in competitor_references]
+                competitor_reference_titles = [ref.product_name for ref in competitor_references]
             except Product.DoesNotExist:
                 competitor_reference_titles = []
 
@@ -934,9 +934,9 @@ def plot_dashboard(df, user_accounts):
 #             # Fetch the competitor references for the selected product
 #             from client_profile.models import Product
 #             try:
-#                 product_instance = Product.objects.get(TITLE=product)
+#                 product_instance = Product.objects.get(product_name=product)
 #                 competitor_references = product_instance.competitor_references.all()
-#                 competitor_reference_titles = [ref.TITLE for ref in competitor_references]
+#                 competitor_reference_titles = [ref.product_name for ref in competitor_references]
 #             except Product.DoesNotExist:
 #                 competitor_reference_titles = []
 

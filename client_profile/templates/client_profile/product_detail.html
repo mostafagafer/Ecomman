@@ -1,54 +1,183 @@
 {% extends 'layouts/base.html' %}
 
 {% block content %}
-  <h1>Product Detail</h1>
+<style>
+  .detail-page {
+    display: grid;
+    gap: 20px;
+  }
+  .detail-hero, .detail-section {
+    border: 1px solid #d8e2dc;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 18px 45px rgba(28, 49, 43, 0.08);
+  }
+  .detail-hero {
+    display: grid;
+    gap: 14px;
+    padding: 28px;
+    background: linear-gradient(135deg, #faf5ff 0%, #ffffff 54%, #eef2ff 100%);
+  }
+  .detail-kicker {
+    color: #cb0c9f;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .detail-hero h1 {
+    margin: 0;
+    color: #172033;
+    font-size: clamp(1.9rem, 3vw, 3rem);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .detail-hero p {
+    margin: 0;
+    color: #5f6d7e;
+    max-width: 78ch;
+    line-height: 1.7;
+  }
+  .detail-section {
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+  }
+  .detail-section h2 {
+    margin: 0;
+    color: #172033;
+    font-size: 1.25rem;
+  }
+  .detail-list {
+    display: grid;
+    gap: 12px;
+  }
+  .detail-item {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid #eef2f7;
+  }
+  .detail-label {
+    color: #94a3b8;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .detail-value {
+    color: #243044;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+  .detail-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .detail-gallery img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 1px solid #eef2f7;
+  }
+  .detail-chip {
+    display: inline-flex;
+    margin: 0 6px 6px 0;
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+  @media (max-width: 720px) {
+    .detail-item { grid-template-columns: 1fr; gap: 6px; }
+  }
+</style>
 
-  <div class="row">
-    <div class="col-md-6">
-      <h2>Product Information</h2>
-      <table class="table table-striped">
-        <tr>
-          <th>Title:</th>
-          <td>{{ product.TITLE }}</td>
-        </tr>
-        <tr>
-          <th>ASIN:</th>
-          <td>{{ product.ASIN }}</td>
-        </tr>
-        <tr>
-          <th>Description:</th>
-          <td>{{ product.description }}</td>
-        </tr>
-      </table>
-    </div>
+<div class="container-fluid py-4 detail-page">
+  <section class="detail-hero">
+    <div class="detail-kicker">{% if product.is_competitor %}Competitor product{% else %}My product{% endif %}</div>
+    <h1>{{ product.product_name }}</h1>
+    <p>
+      {% if product.is_competitor %}
+        This competitor product is used as a market reference and can be tied to your owned products for comparison.
+      {% else %}
+        This product profile contains the classification, channels, pricing, and media Ecomman uses for market monitoring.
+      {% endif %}
+    </p>
+  </section>
 
-    <div class="col-md-6">
-      <h2>Accounts</h2>
-      <table class="table table-striped">
-        <tr>
-          <th>Account</th>
-          <th>URL</th>
-        </tr>
-        {% for account in product.accounts.all %}
-          <tr>
-            <td>{{ account.account }}</td>
-            <td>{{ account.url }}</td>
-          </tr>
-        {% endfor %}
-      </table>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-md-12">
-      <h2>Photos</h2>
-      <div class="photo-gallery">
-        {% for photo in product.photos.all %}
-          <div class="photo">
-            <img src="{{ photo.image.url }}" alt="Photo">
-          </div>
-        {% endfor %}
+  <section class="detail-section">
+    <h2>Product information</h2>
+    <div class="detail-list">
+      <div class="detail-item">
+        <div class="detail-label">Name</div>
+        <div class="detail-value">{{ product.product_name }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Description</div>
+        <div class="detail-value">{{ product.description|default:"-" }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Brand</div>
+        <div class="detail-value">{{ product.brand|default:"-" }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Category</div>
+        <div class="detail-value">{{ product.category|default:"-" }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Subcategory</div>
+        <div class="detail-value">{{ product.subcategory|default:"-" }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">RSP</div>
+        <div class="detail-value">{{ product.RSP|default:"-" }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">RSP + VAT</div>
+        <div class="detail-value">{{ product.RSP_VAT|default:"-" }}</div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section class="detail-section">
+    <h2>Channels</h2>
+    <div>
+      {% for product_channel in product.product_channels.all %}
+        <span class="detail-chip">{{ product_channel.channel.display_name }}</span>
+      {% empty %}
+        <span class="detail-value">No channels selected.</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if product.is_competitor %}
+    <section class="detail-section">
+      <h2>Linked products</h2>
+      <div>
+        {% for reference in product.competitor_references.all %}
+          <span class="detail-chip">{{ reference.product_name }}</span>
+        {% empty %}
+          <span class="detail-value">This competitor is not linked to any owned products yet.</span>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="detail-section">
+    <h2>Photos</h2>
+    <div class="detail-gallery">
+      {% for photo in product.photos.all %}
+        <img src="{{ photo.image.url }}" alt="{{ product.product_name }}">
+      {% empty %}
+        <span class="detail-value">No photos uploaded.</span>
+      {% endfor %}
+    </div>
+  </section>
+</div>
 {% endblock %}

@@ -1,0 +1,7 @@
+Verify your Ecomman account
+
+Use this code to finish creating your account:
+
+{{ otp_code }}
+
+The code expires soon. Do not share it with anyone.

@@ -5,4 +5,4 @@
 #     class Meta:
 #         model = ScrapedData
 #         template_name = 'django_tables2/bootstrap4.html'
-#         fields = ('product.TITLE', 'dawa_price', 'nahdi_price', 'amazon_price', 'scraped_at')
+#         fields = ('product.product_name', 'dawa_price', 'nahdi_price', 'amazon_price', 'scraped_at')

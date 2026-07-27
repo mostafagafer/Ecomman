@@ -1,0 +1,445 @@
+{% load static %}
+
+<style>
+  .product-wizard-shell {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.34fr) minmax(0, 0.66fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .wizard-intro, .wizard-panel {
+    border: 1px solid rgba(22, 66, 53, 0.12);
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(28, 49, 43, 0.08);
+  }
+  .wizard-intro {
+    position: sticky;
+    top: 88px;
+    padding: 26px;
+    overflow: hidden;
+  }
+  .wizard-intro:before {
+    content: "";
+    display: block;
+    height: 8px;
+    margin: -26px -26px 22px;
+    background: linear-gradient(90deg, #cb0c9f, #7928ca, #2152ff);
+  }
+  .wizard-kicker {
+    color: #cb0c9f;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .wizard-title {
+    margin: 10px 0 14px;
+    color: #172033;
+    font-size: clamp(1.8rem, 3vw, 3rem);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .wizard-copy {
+    color: #5f6d7e;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  .wizard-progress {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .wizard-progress span {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #7a8796;
+    font-size: .9rem;
+  }
+  .wizard-progress span:before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #d1d5db;
+  }
+  .wizard-progress span.active { color: #172033; font-weight: 800; }
+  .wizard-progress span.active:before { background: #cb0c9f; box-shadow: 0 0 0 5px rgba(203, 12, 159, .14); }
+  .wizard-stage { position: relative; min-height: 620px; }
+  .wizard-panel {
+    display: none;
+    padding: 30px;
+    animation: wizardIn .38s ease both;
+  }
+  .wizard-panel.active { display: block; }
+  @keyframes wizardIn {
+    from { opacity: 0; transform: translateX(28px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .wizard-panel h2 {
+    color: #172033;
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    line-height: 1.12;
+    margin: 0 0 10px;
+  }
+  .wizard-panel p {
+    color: #5f6d7e;
+    line-height: 1.7;
+    margin: 0 0 22px;
+  }
+  .wizard-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .wizard-field { display: grid; gap: 8px; }
+  .wizard-field.wide { grid-column: 1 / -1; }
+  .wizard-field label {
+    color: #334155;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .wizard-field input, .wizard-field textarea, .wizard-field select {
+    width: 100%;
+    border: 1px solid #d8e2dc;
+    border-radius: 14px;
+    padding: 13px 15px;
+    color: #172033;
+    background: #fbfefc;
+    outline: none;
+  }
+  .wizard-field input:focus, .wizard-field textarea:focus, .wizard-field select:focus {
+    border-color: #cb0c9f;
+    box-shadow: 0 0 0 4px rgba(203, 12, 159, .12);
+  }
+  .choice-grid, .channel-grid, .reference-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .channel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .choice-card, .channel-card, .reference-card {
+    position: relative;
+    display: grid;
+    align-content: center;
+    min-height: 132px;
+    border: 1px solid #d8e2dc;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 18px;
+    cursor: pointer;
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .choice-card:hover, .channel-card:hover, .reference-card:hover { transform: translateY(-2px); }
+  .choice-card.selected, .channel-card.selected, .reference-card.selected {
+    border-color: #cb0c9f;
+    background: linear-gradient(180deg, #faf5ff, #ffffff);
+    box-shadow: 0 16px 36px rgba(203, 12, 159, .14);
+  }
+  .choice-card input, .channel-card input, .reference-card input { position: absolute; opacity: 0; pointer-events: none; }
+  .choice-card strong, .reference-card strong {
+    display: block;
+    color: #172033;
+    font-size: 1.06rem;
+    margin-bottom: 8px;
+  }
+  .choice-card span, .reference-card span {
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .channel-card {
+    min-height: 126px;
+    text-align: center;
+    justify-items: center;
+    gap: 12px;
+  }
+  .channel-card img {
+    max-width: 120px;
+    max-height: 46px;
+    object-fit: contain;
+  }
+  .channel-card strong { color: #172033; }
+  .wizard-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .wizard-actions .btn { min-width: 120px; }
+  .wizard-note {
+    border-left: 4px solid #cb0c9f;
+    background: #faf5ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #581c87;
+    line-height: 1.6;
+  }
+  @media (max-width: 992px) {
+    .product-wizard-shell { grid-template-columns: 1fr; }
+    .wizard-intro { position: static; }
+    .channel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .wizard-field-grid, .choice-grid, .channel-grid, .reference-grid { grid-template-columns: 1fr; }
+    .wizard-panel { padding: 22px; }
+  }
+</style>
+
+<div class="product-wizard-shell">
+  <aside class="wizard-intro">
+    <div class="wizard-kicker">{% if mode == 'edit' %}Edit product{% else %}Create product{% endif %}</div>
+    <h1 class="wizard-title">Build a cleaner product profile.</h1>
+    <p class="wizard-copy">
+      This flow separates your own products from competitor products. Your products carry the full market context:
+      description, brand, category, subcategory, product image, and the channels you want to monitor. Competitor products
+      stay lightweight and are tied directly to the products they compete with.
+    </p>
+    <div class="wizard-progress" id="wizardProgress">
+      <span class="active">Product type</span>
+      <span>Core details</span>
+      <span>Market context</span>
+      <span>Channels</span>
+      <span>Review</span>
+    </div>
+  </aside>
+
+  <section class="wizard-stage">
+    {% if product_form.non_field_errors %}
+      <div class="alert alert-danger">{{ product_form.non_field_errors }}</div>
+    {% endif %}
+
+    {{ product_form.is_competitor }}
+
+    <div class="wizard-panel active" data-step="0">
+      <div class="wizard-kicker">Step 1</div>
+      <h2>Is this your product or a competitor product?</h2>
+      <p>Choose how Ecomman should treat this record. Your own products get the full market profile. Competitor products are used as references against your own products.</p>
+      <div class="choice-grid">
+        <label class="choice-card" data-product-type="own">
+          <input type="radio" name="product_type_choice" value="own">
+          <strong>My product</strong>
+          <span>This is your product. Ecomman will keep brand, category, description, image, and channel monitoring active.</span>
+        </label>
+        <label class="choice-card" data-product-type="competitor">
+          <input type="radio" name="product_type_choice" value="competitor">
+          <strong>Competitor product</strong>
+          <span>This is a competitor item. Ecomman will link it to one or more of your products for comparison.</span>
+        </label>
+      </div>
+      <div class="wizard-actions">
+        <span></span>
+        <button type="button" class="btn bg-gradient-primary wizard-next">Continue</button>
+      </div>
+    </div>
+
+    <div class="wizard-panel" data-step="1">
+      <div class="wizard-kicker">Step 2</div>
+      <h2>What is the product name?</h2>
+      <p>Use the commercial product name customers and marketplaces would recognize. This name becomes the default search term for selected channels.</p>
+      <div class="wizard-field-grid">
+        <div class="wizard-field wide">
+          <label for="{{ product_form.product_name.id_for_label }}">Product name</label>
+          {{ product_form.product_name }}
+          <span class="text-danger">{{ product_form.product_name.errors }}</span>
+        </div>
+        <div class="wizard-field">
+          <label for="{{ product_form.RSP.id_for_label }}">RSP</label>
+          {{ product_form.RSP }}
+          <span class="text-danger">{{ product_form.RSP.errors }}</span>
+        </div>
+        <div class="wizard-field">
+          <label for="{{ product_form.RSP_VAT.id_for_label }}">RSP with VAT</label>
+          {{ product_form.RSP_VAT }}
+          <span class="text-danger">{{ product_form.RSP_VAT.errors }}</span>
+        </div>
+      </div>
+      <div class="wizard-actions">
+        <button type="button" class="btn btn-outline-secondary wizard-prev">Back</button>
+        <button type="button" class="btn bg-gradient-primary wizard-next">Continue</button>
+      </div>
+    </div>
+
+    <div class="wizard-panel own-only" data-step="2">
+      <div class="wizard-kicker">Step 3</div>
+      <h2>Describe and classify your product.</h2>
+      <p>The description helps product listings and matching. Brand, category, and subcategory make performance comparisons more precise.</p>
+      <div class="wizard-field-grid">
+        <div class="wizard-field wide">
+          <label for="{{ product_form.description.id_for_label }}">Description</label>
+          {{ product_form.description }}
+          <span class="text-danger">{{ product_form.description.errors }}</span>
+        </div>
+        <div class="wizard-field">
+          <label for="{{ product_form.brand_name.id_for_label }}">Brand</label>
+          {{ product_form.brand_name }}
+          <datalist id="brand-options">
+            {% for brand in taxonomy_options.brands %}
+              <option value="{{ brand }}"></option>
+            {% endfor %}
+          </datalist>
+          <span class="text-danger">{{ product_form.brand_name.errors }}</span>
+        </div>
+        <div class="wizard-field">
+          <label for="{{ product_form.category_name.id_for_label }}">Category</label>
+          {{ product_form.category_name }}
+          <datalist id="category-options">
+            {% for category in taxonomy_options.categories %}
+              <option value="{{ category }}"></option>
+            {% endfor %}
+          </datalist>
+          <span class="text-danger">{{ product_form.category_name.errors }}</span>
+        </div>
+        <div class="wizard-field">
+          <label for="{{ product_form.subcategory_name.id_for_label }}">Subcategory</label>
+          {{ product_form.subcategory_name }}
+          <datalist id="subcategory-options">
+            {% for subcategory in taxonomy_options.subcategories %}
+              <option value="{{ subcategory }}"></option>
+            {% endfor %}
+          </datalist>
+          <span class="text-danger">{{ product_form.subcategory_name.errors }}</span>
+        </div>
+        <div class="wizard-field wide">
+          <label for="productPhoto">Product picture</label>
+          <input type="file" id="productPhoto" name="product_photo" accept="image/*">
+          {% if product and product.photos.first %}
+            <small>Current image: {{ product.photos.first.image.name }}</small>
+          {% endif %}
+        </div>
+      </div>
+      <div class="wizard-actions">
+        <button type="button" class="btn btn-outline-secondary wizard-prev">Back</button>
+        <button type="button" class="btn bg-gradient-primary wizard-next">Continue</button>
+      </div>
+    </div>
+
+    <div class="wizard-panel competitor-only" data-step="2">
+      <div class="wizard-kicker">Step 3</div>
+      <h2>Tie this competitor to your products.</h2>
+      <p>Select every product this competitor should be compared against. This uses the existing competitor reference relationship, so dashboards can understand which products belong together.</p>
+      {% if own_products %}
+        <div class="reference-grid">
+          {% for own_product in own_products %}
+            <label class="reference-card {% if own_product.id in selected_competitor_refs %}selected{% endif %}">
+              <input type="checkbox" name="competitor_references" value="{{ own_product.id }}" {% if own_product.id in selected_competitor_refs %}checked{% endif %}>
+              <strong>{{ own_product.product_name }}</strong>
+              <span>{{ own_product.brand|default:"No brand" }}{% if own_product.category %} · {{ own_product.category }}{% endif %}</span>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="wizard-note">Create at least one “My product” record first, then competitor products can be linked to it.</div>
+      {% endif %}
+      <div class="wizard-actions">
+        <button type="button" class="btn btn-outline-secondary wizard-prev">Back</button>
+        <button type="button" class="btn bg-gradient-primary wizard-next">Continue</button>
+      </div>
+    </div>
+
+    <div class="wizard-panel" data-step="3">
+      <div class="wizard-kicker">Step 4</div>
+      <h2>Select channels to monitor.</h2>
+      <p>Choose the marketplaces and retailers Ecomman should use for scraping, price comparison, and availability checks. Selected channels are highlighted.</p>
+      <button type="button" class="btn btn-outline-primary mb-3" id="selectAllChannels">Select all channels</button>
+      <div class="channel-grid">
+        {% for channel in channel_options %}
+          <label class="channel-card {% if channel.key in selected_channels %}selected{% endif %}">
+            <input type="checkbox" name="channels" value="{{ channel.key }}" {% if channel.key in selected_channels %}checked{% endif %}>
+            <img src="{% static channel.logo %}" alt="{{ channel.name }} logo">
+            <strong>{{ channel.name }}</strong>
+          </label>
+        {% endfor %}
+      </div>
+      <div class="wizard-actions">
+        <button type="button" class="btn btn-outline-secondary wizard-prev">Back</button>
+        <button type="button" class="btn bg-gradient-primary wizard-next">Continue</button>
+      </div>
+    </div>
+
+    <div class="wizard-panel" data-step="4">
+      <div class="wizard-kicker">Step 5</div>
+      <h2>Review and save.</h2>
+      <p>Save this product profile when the details are ready. You can edit the product later as your catalog or competitor set changes.</p>
+      <div class="wizard-note">
+        My products keep classification, description, photo, and channels. Competitor products drop classification, description, and photo, then use selected references to connect to your own products.
+      </div>
+      <div class="wizard-actions">
+        <button type="button" class="btn btn-outline-secondary wizard-prev">Back</button>
+        <button type="submit" class="btn bg-gradient-primary">{% if mode == 'edit' %}Save changes{% else %}Create product{% endif %}</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    const form = document.getElementById('productWizard');
+    const hiddenType = document.getElementById('id_is_competitor');
+    const panels = Array.from(form.querySelectorAll('.wizard-panel'));
+    const progress = Array.from(document.querySelectorAll('#wizardProgress span'));
+    const choiceCards = Array.from(form.querySelectorAll('.choice-card'));
+    const selectableCards = Array.from(form.querySelectorAll('.channel-card, .reference-card'));
+    let step = 0;
+
+    function isCompetitor() {
+      return hiddenType && ['true', 'True', 'on', '1'].includes(String(hiddenType.value));
+    }
+
+    function setType(competitor) {
+      hiddenType.value = competitor ? 'True' : 'False';
+      choiceCards.forEach(card => card.classList.toggle('selected', card.dataset.productType === (competitor ? 'competitor' : 'own')));
+      choiceCards.forEach(card => {
+        const input = card.querySelector('input');
+        input.checked = card.dataset.productType === (competitor ? 'competitor' : 'own');
+      });
+    }
+
+    function visiblePanels() {
+      return panels.filter(panel => {
+        if (panel.classList.contains('own-only')) return !isCompetitor();
+        if (panel.classList.contains('competitor-only')) return isCompetitor();
+        return true;
+      });
+    }
+
+    function showStep(nextStep) {
+      const visible = visiblePanels();
+      step = Math.max(0, Math.min(nextStep, visible.length - 1));
+      panels.forEach(panel => panel.classList.remove('active'));
+      visible[step].classList.add('active');
+      progress.forEach((item, index) => item.classList.toggle('active', index === step));
+    }
+
+    choiceCards.forEach(card => {
+      card.addEventListener('click', () => {
+        setType(card.dataset.productType === 'competitor');
+        showStep(step);
+      });
+    });
+
+    selectableCards.forEach(card => {
+      const input = card.querySelector('input');
+      card.addEventListener('click', () => setTimeout(() => card.classList.toggle('selected', input.checked), 0));
+    });
+
+    form.querySelectorAll('.wizard-next').forEach(button => button.addEventListener('click', () => showStep(step + 1)));
+    form.querySelectorAll('.wizard-prev').forEach(button => button.addEventListener('click', () => showStep(step - 1)));
+
+    const selectAll = document.getElementById('selectAllChannels');
+    selectAll.addEventListener('click', () => {
+      const channelCards = Array.from(form.querySelectorAll('.channel-card'));
+      const shouldSelect = channelCards.some(card => !card.querySelector('input').checked);
+      channelCards.forEach(card => {
+        card.querySelector('input').checked = shouldSelect;
+        card.classList.toggle('selected', shouldSelect);
+      });
+      selectAll.textContent = shouldSelect ? 'Clear channels' : 'Select all channels';
+    });
+
+    setType(isCompetitor());
+    showStep(0);
+  })();
+</script>

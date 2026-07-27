@@ -1,0 +1,112 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ecomman_backend_dev
+    restart: "no"
+    ports:
+      - "8000:8000"
+    env_file:
+      - project/.env
+    environment:
+      ENVIRONMENT: "development"
+      DEBUG: "True"
+      COLLECT_STATIC: "0"
+      RUN_MIGRATIONS: "1"
+      USE_PROD_DB: "False"
+      STORAGE_ROOT: "/app/Ecomman"
+      LOCAL_DB_HOST: "host.docker.internal"
+      REDIS_URL: "redis://redis:6379/0"
+      CHANNEL_REDIS_URL: "redis://redis:6379/0"
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      DJANGO_CACHE_URL: "redis://redis:6379/3"
+      REDIS_KEY_PREFIX: "ecomman:dev"
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    networks:
+      - ecomman_network
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    depends_on:
+      - redis
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ecomman_celery_dev
+    restart: "no"
+    env_file:
+      - project/.env
+    environment:
+      ENVIRONMENT: "development"
+      DEBUG: "True"
+      COLLECT_STATIC: "0"
+      RUN_MIGRATIONS: "0"
+      USE_PROD_DB: "False"
+      STORAGE_ROOT: "/app/Ecomman"
+      LOCAL_DB_HOST: "host.docker.internal"
+      REDIS_URL: "redis://redis:6379/0"
+      CHANNEL_REDIS_URL: "redis://redis:6379/0"
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      DJANGO_CACHE_URL: "redis://redis:6379/3"
+      REDIS_KEY_PREFIX: "ecomman:dev"
+    command: ["celery", "-A", "project", "worker", "-l", "INFO", "-Q", "default,celery", "--pool=solo"]
+    networks:
+      - ecomman_network
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ecomman_celery_beat_dev
+    restart: "no"
+    env_file:
+      - project/.env
+    environment:
+      ENVIRONMENT: "development"
+      DEBUG: "True"
+      COLLECT_STATIC: "0"
+      RUN_MIGRATIONS: "0"
+      USE_PROD_DB: "False"
+      STORAGE_ROOT: "/app/Ecomman"
+      LOCAL_DB_HOST: "host.docker.internal"
+      REDIS_URL: "redis://redis:6379/0"
+      CHANNEL_REDIS_URL: "redis://redis:6379/0"
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+      DJANGO_CACHE_URL: "redis://redis:6379/3"
+      REDIS_KEY_PREFIX: "ecomman:dev"
+    command: ["celery", "-A", "project", "beat", "-l", "INFO", "--schedule", "/app/Ecomman/celerybeat/celerybeat-schedule"]
+    networks:
+      - ecomman_network
+    volumes:
+      - .:/app
+      - celerybeat_volume:/app/Ecomman/celerybeat
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:8-alpine
+    container_name: ecomman_redis_dev
+    restart: "no"
+    networks:
+      - ecomman_network
+    volumes:
+      - redis_data:/data
+
+volumes:
+  static_volume:
+  redis_data:
+  celerybeat_volume:
+
+networks:
+  ecomman_network:
+    driver: bridge

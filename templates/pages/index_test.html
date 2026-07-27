@@ -20,7 +20,7 @@
           <tbody>
             {% for data in scraped_data %}
               <tr>
-                <td>{{ data.product.TITLE }}</td>
+                <td>{{ data.product.product_name }}</td>
                 <td>{{ data.product.RSP|floatformat:"2" }}</td>
                 <td>
                   <a href="{{ data.product.Dawa_Link }}">{{ data.dawa_price|default:"N/A" }}</a>

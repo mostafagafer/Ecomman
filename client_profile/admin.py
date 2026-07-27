@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile, Product, Photo, Account_id, ProductAccountLinkId, Product, PromoPlan, Brand, Category, Subcategory #Keyword, ProductAccountLink, Account
+from .models import Profile, Product, Photo, Channel, ProductChannel, Product, PromoPlan, Brand, Category, Subcategory #Keyword, ProductAccountLink, Account
 
 
 class PhotoInline(admin.TabularInline):
@@ -10,8 +10,8 @@ class PhotoInline(admin.TabularInline):
 #     model = ProductAccountLink
 #     extra = 1
 
-class ProductAccountLinkIdInline(admin.TabularInline):
-    model = ProductAccountLinkId
+class ProductChannelInline(admin.TabularInline):
+    model = ProductChannel
     extra = 1
 
 
@@ -23,10 +23,10 @@ class ProfileAdmin(admin.ModelAdmin):
     inlines = [ProductInline]
 
 class ProductAdmin(admin.ModelAdmin):
-    inlines = [PhotoInline, ProductAccountLinkIdInline] #, KeywordInline, ProductAccountLinkInline
-    list_display = ('TITLE', 'description', 'RSP', 'RSP_VAT', 'profile', 'category', 'subcategory', 'brand')  # Add new fields
+    inlines = [PhotoInline, ProductChannelInline] #, KeywordInline, ProductAccountLinkInline
+    list_display = ('product_name', 'description', 'RSP', 'RSP_VAT', 'profile', 'category', 'subcategory', 'brand')  # Add new fields
     list_filter = ('category', 'subcategory', 'brand')  # Add new filters
-    search_fields = ('TITLE', 'description', 'category__name', 'subcategory__name', 'brand__name')  # Add new fields
+    search_fields = ('product_name', 'description', 'category__name', 'subcategory__name', 'brand__name')  # Add new fields
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)
@@ -44,7 +44,7 @@ class BrandAdmin(admin.ModelAdmin):
 class PromoPlanAdmin(admin.ModelAdmin):
     list_display = ('product', 'start_date', 'end_date', 'discount_percentage', 'desired_price', 'is_on_sale')
     list_filter = ('product__profile__user', 'start_date', 'end_date')
-    search_fields = ('name', 'product__TITLE')
+    search_fields = ('name', 'product__product_name')
 
 
 
@@ -52,10 +52,8 @@ class PromoPlanAdmin(admin.ModelAdmin):
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Photo)
-# admin.site.register(Account)
-admin.site.register(Account_id)
-# admin.site.register(ProductAccountLink)
-admin.site.register(ProductAccountLinkId)
+admin.site.register(Channel)
+admin.site.register(ProductChannel)
 # admin.site.register(Keyword)
 admin.site.register(PromoPlan, PromoPlanAdmin)
 admin.site.register(Category, CategoryAdmin)

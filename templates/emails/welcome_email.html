@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<h2 style="margin-top:0;">Welcome to Ecomman</h2>
+<p>Your account is verified and ready to use.</p>
+<p>You can now manage product data, competitor pricing, scraping workflows, dashboards, and ecommerce performance from one platform.</p>
+{% if frontend_base_url %}
+<p style="margin-top:24px;"><a href="{{ frontend_base_url }}" style="display:inline-block; background:#cb0c9f; color:#ffffff; text-decoration:none; padding:13px 18px; border-radius:10px;">Open Ecomman</a></p>
+{% endif %}
+{% endblock %}

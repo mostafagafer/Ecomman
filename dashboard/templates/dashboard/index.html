@@ -283,7 +283,7 @@
                             <select id="products" name="products" class="form-select" multiple>
                                 {% for product in all_products %}
                                     <option value="{{ product.id }}" {% if product.id|stringformat:"s" in selected_product_ids %}selected{% endif %}>
-                                        {{ product.TITLE }}
+                                        {{ product.product_name }}
                                     </option>
                                 {% endfor %}
                             </select>
@@ -330,7 +330,7 @@
                             <tbody>
                                 {% for data in max_scraped_data %}
                                     <tr>
-                                        <td>{{ data.product.TITLE }}</td>
+                                        <td>{{ data.product.product_name }}</td>
                                         {% for column in columns %}
                                             <td class="text-center">
                                                 {% if "_price" in column.name or "_discount" in column.name %}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block email_title %}{{ email_brand_name|default:"Ecomman" }}{% endblock %}</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; border-collapse:collapse; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; display:block; }
+    body { margin:0; padding:0; width:100% !important; background:#f6f9f7; font-family:Arial, Helvetica, sans-serif; }
+    .email-shell { width:680px; max-width:680px; }
+    .email-padding { padding-left:34px; padding-right:34px; }
+    .content h2 { color:#172033; font-size:28px; line-height:1.25; margin:0 0 16px; }
+    .content p { color:#39465f; font-size:16px; line-height:1.65; margin:0 0 16px; }
+    .content a { color:#cb0c9f; font-weight:700; }
+    @media only screen and (max-width:640px) {
+      .email-shell { width:100% !important; }
+      .email-padding { padding-left:22px !important; padding-right:22px !important; }
+      .content h2 { font-size:24px !important; }
+    }
+  </style>
+</head>
+<body>
+  <center style="width:100%; background:#f6f9f7;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background:#f6f9f7;">
+      <tr>
+        <td align="center" style="padding:30px 12px;">
+          <table role="presentation" class="email-shell" width="680" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border:1px solid #d8e2dc; border-radius:24px; overflow:hidden; box-shadow:0 18px 45px rgba(28,49,43,0.12);">
+            <tr>
+              <td align="center" class="email-padding" style="padding-top:30px; padding-bottom:30px; text-align:center; background-color:#f5e8ff; background-image:radial-gradient(circle at 18% 18%, #ffffff 0, #ffffff 7%, transparent 8%), radial-gradient(circle at 86% 20%, #f0abfc 0, #f0abfc 14%, transparent 15%), linear-gradient(135deg, #f8e7ff 0%, #d8b4fe 42%, #bfdbfe 100%);">
+                {% if email_logo_url %}
+                <a href="{{ email_website_url|default:frontend_base_url }}" style="display:inline-block; text-decoration:none;">
+                  <img src="{{ email_logo_url }}" width="190" alt="{{ email_brand_name|default:'Ecomman' }}" style="width:190px; max-width:70%; height:auto; margin:0 auto;">
+                </a>
+                {% else %}
+                <div style="font-size:34px; font-weight:800; color:#0f172a; letter-spacing:0;">{{ email_brand_name|default:"Ecomman" }}</div>
+                {% endif %}
+                <div style="margin-top:16px; color:#581c87; font-size:14px; line-height:1.4; font-weight:700; letter-spacing:.08em; text-transform:uppercase;">Ecommerce management platform</div>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-padding content" style="padding-top:36px; padding-bottom:34px; background:#ffffff;">
+                {% block content %}{% endblock %}
+              </td>
+            </tr>
+            <tr>
+              <td align="center" class="email-padding" style="padding-top:28px; padding-bottom:26px; background-color:#111827; background-image:linear-gradient(135deg, #111827 0%, #581c87 56%, #cb0c9f 100%); color:#f3e8ff; text-align:center;">
+                <div style="font-size:20px; line-height:1.35; font-weight:800; color:#ffffff; margin:0 0 8px;">Need help?</div>
+                {% if support_email %}
+                <div style="font-size:14px; line-height:1.6; margin:0 0 8px;">
+                  <a href="mailto:{{ support_email }}" style="color:#f0abfc; text-decoration:none; font-weight:700;">{{ support_email }}</a>
+                </div>
+                {% endif %}
+                {% if email_website_url %}
+                <div style="font-size:14px; line-height:1.6; margin:0 0 18px;">
+                  <a href="{{ email_website_url }}" style="color:#ffffff; text-decoration:underline; font-weight:700;">{{ email_website_url }}</a>
+                </div>
+                {% endif %}
+                {% if email_social_linkedin_url or email_social_facebook_url %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+                  <tr>
+                    {% if email_social_linkedin_url %}
+                    <td style="padding:0 5px;">
+                      <a href="{{ email_social_linkedin_url }}" style="display:inline-block; width:38px; height:38px; border-radius:19px; background:#ffffff; color:#0a66c2; font-size:14px; font-weight:800; line-height:38px; text-align:center; text-decoration:none;">in</a>
+                    </td>
+                    {% endif %}
+                    {% if email_social_facebook_url %}
+                    <td style="padding:0 5px;">
+                      <a href="{{ email_social_facebook_url }}" style="display:inline-block; width:38px; height:38px; border-radius:19px; background:#ffffff; color:#1877f2; font-size:18px; font-weight:800; line-height:38px; text-align:center; text-decoration:none;">f</a>
+                    </td>
+                    {% endif %}
+                  </tr>
+                </table>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td class="email-padding" style="padding-top:16px; padding-bottom:16px; background:#f8fbf9; color:#607067; text-align:center; font-size:12px; line-height:1.6; border-top:1px solid #d8e2dc;">
+                &copy; {% now "Y" %} {{ email_brand_name|default:"Ecomman" }}. You are receiving this email because of your request or account activity.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>

@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Ecomman - Ecommerce Management Platform</title>
+  <meta name="description" content="Ecomman helps ecommerce teams manage products, monitor competitor pricing, run scraping workflows, and understand performance from one dashboard.">
+  <meta name="keywords" content="Ecomman, ecommerce management, pricing intelligence, product monitoring, ecommerce dashboard">
+
+  <link href="{% static 'img/logos/ECOM_logo.svg' %}" rel="icon" type="image/svg+xml">
+  <link href="{% static 'img/logos/ECOM_logo.svg' %}" rel="apple-touch-icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Poppins:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <link href="{% static 'landing/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'landing/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'landing/assets/vendor/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'landing/assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+  <link href="{% static 'landing/assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+  <link href="{% static 'landing/assets/css/main.css' %}" rel="stylesheet">
+  <link href="{% static 'landing/assets/css/bracket-landing.css' %}" rel="stylesheet">
+</head>
+
+<body class="index-page bracket-landing">
+  <header id="header" class="header position-relative">
+    <div class="container-fluid container-xl position-relative">
+      <div class="top-row d-flex align-items-center justify-content-between">
+        <a href="#hero" class="logo d-flex align-items-center bracket-brand">
+          <img src="{% static 'img/logos/ECOM_logo.svg' %}" alt="Ecomman logo" style="height:52px; width:auto;">
+          <span style="font-size:28px; font-weight:800; color:#111827; margin-left:10px;">Ecomman</span>
+        </a>
+        <div class="d-flex align-items-center gap-2">
+          {% if user.is_authenticated %}
+            <a class="landing-cta" href="{% url 'dashboard:index' %}">Dashboard</a>
+          {% else %}
+            <a class="landing-login" href="{% url 'login' %}">Login</a>
+            <a class="landing-cta" href="{% url 'register' %}">Register</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-wrap">
+      <div class="container d-flex justify-content-center position-relative">
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="#hero" class="active">Home</a></li>
+            <li><a href="#about">Platform</a></li>
+            <li><a href="#library">Operations</a></li>
+            <li><a href="#workflow">Workflow</a></li>
+            <li><a href="#testimonials">Use Cases</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section id="hero" class="blog-hero section landing-hero">
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="landing-hero-grid">
+          <article class="blog-item featured landing-hero-card" data-aos="fade-up">
+            <img src="{% static 'landing/assets/img/blog/blog-post-3.webp' %}" alt="Ecommerce dashboard planning" class="img-fluid">
+            <div class="blog-content">
+              <div class="post-meta">
+                <span class="date">Ecommerce operations</span>
+                <span class="category">Management platform</span>
+              </div>
+              <h2 class="post-title">Control products, prices, and market signals from one dashboard.</h2>
+              <p class="landing-hero-copy">Ecomman gives ecommerce teams a cleaner way to manage product catalogs, monitor competitor prices, organize scraping runs, and turn messy marketplace data into decisions.</p>
+              <div class="landing-actions">
+                {% if user.is_authenticated %}
+                  <a href="{% url 'dashboard:index' %}" class="btn btn-primary">Go to dashboard</a>
+                {% else %}
+                  <a href="{% url 'register' %}" class="btn btn-primary">Create account</a>
+                  <a href="{% url 'login' %}" class="btn btn-outline">Login</a>
+                {% endif %}
+                <a href="#workflow" class="btn btn-outline">See the workflow</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="about section">
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row align-items-center gy-5">
+          <div class="col-lg-6" data-aos="fade-right" data-aos-delay="150">
+            <div class="section-badge"><i class="bi bi-lightning-charge"></i> Ecommerce command center</div>
+            <h2 class="about-title">Track the market, clean your catalog, and move faster on pricing decisions.</h2>
+            <p class="about-description">Ecomman is built for teams that need reliable product intelligence without scattered spreadsheets and manual marketplace checks.</p>
+            <p class="section-text">Manage product profiles, compare channel prices, review availability, schedule scraping, and monitor category movement from a focused ecommerce workspace.</p>
+
+            <div class="row features-boxes gy-4 mt-3">
+              <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-box">
+                  <div class="icon-box"><i class="bi bi-box-seam"></i></div>
+                  <h3><a href="#library">Product control</a></h3>
+                  <p>Keep catalog records, channels, brands, categories, and product references organized.</p>
+                </div>
+              </div>
+              <div class="col-md-6" data-aos="fade-up" data-aos-delay="250">
+                <div class="feature-box">
+                  <div class="icon-box"><i class="bi bi-graph-up-arrow"></i></div>
+                  <h3><a href="#workflow">Pricing visibility</a></h3>
+                  <p>Compare prices and availability across channels so the next action is clear.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6" data-aos="fade-left" data-aos-delay="200">
+            <div class="video-box">
+              <img src="{% static 'landing/assets/img/about/thumbnail.jpg' %}" alt="Ecomman platform overview" class="img-fluid">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="library" class="featured-posts section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Operations</h2>
+        <div><span>Built for</span> <span class="description-title">ecommerce execution</span></div>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="blog-posts-slider swiper init-swiper">
+          <script type="application/json" class="swiper-config">
+            {"loop":true,"speed":800,"autoplay":{"delay":5000},"slidesPerView":3,"spaceBetween":30,"breakpoints":{"320":{"slidesPerView":1,"spaceBetween":20},"768":{"slidesPerView":2,"spaceBetween":20},"1200":{"slidesPerView":3,"spaceBetween":30}}}
+          </script>
+          <div class="swiper-wrapper">
+            <div class="swiper-slide">
+              <div class="blog-post-item">
+                <img src="{% static 'landing/assets/img/blog/young-man-looking-away-while-standing-against-wall_207634-24724.jpg' %}" alt="Product filtering">
+                <div class="blog-post-content">
+                  <div class="post-meta"><span><i class="bi bi-funnel"></i> Product filtering</span></div>
+                  <h2><a href="#workflow">Find the products that need action without digging through tables.</a></h2>
+                  <p>Filter by brand, category, channel, availability, and pricing position.</p>
+                </div>
+              </div>
+            </div>
+            <div class="swiper-slide">
+              <div class="blog-post-item">
+                <img src="{% static 'landing/assets/img/blog/happy-young-bearded-student-guy-red-polo-shirt-with-backpack-holding-notebooks-holding-smartphone-looking-it-smiling-cheerfully-st.jpg' %}" alt="Competitor price review">
+                <div class="blog-post-content">
+                  <div class="post-meta"><span><i class="bi bi-tags"></i> Price intelligence</span></div>
+                  <h2><a href="#workflow">Review competitor prices before revenue leaks away.</a></h2>
+                  <p>Monitor marketplace movement and keep pricing decisions tied to current data.</p>
+                </div>
+              </div>
+            </div>
+            <div class="swiper-slide">
+              <div class="blog-post-item">
+                <img src="{% static 'landing/assets/img/blog/hipster-girl-eyewear-typing-text-message-while-enjoying-time-coffee-shop-waiting-friend_613366-2273.jpg' %}" alt="Dashboard review">
+                <div class="blog-post-content">
+                  <div class="post-meta"><span><i class="bi bi-speedometer2"></i> Dashboards</span></div>
+                  <h2><a href="#workflow">Turn product and scrape data into daily operating views.</a></h2>
+                  <p>Use dashboards to scan performance, assortment, availability, and pricing changes.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="category-section section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Workflow</h2>
+        <div><span>From raw market data to</span> <span class="description-title">clear action</span></div>
+      </div>
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4">
+          <div class="col-lg-4">
+            <article class="post-entry">
+              <div class="post-img"><img src="{% static 'landing/assets/img/blog/326-3264147_select-icon-appropriate-icon-png-transparent-png.png' %}" alt="Set product list" class="img-fluid" loading="lazy"></div>
+              <div class="post-content">
+                <div class="category-meta"><span class="post-category">1. Organize</span></div>
+                <h3><a href="{% url 'register' %}">Create product and channel records.</a></h3>
+                <p>Start with a clean operating base for products, categories, brands, and competitors.</p>
+              </div>
+            </article>
+          </div>
+          <div class="col-lg-4">
+            <article class="post-entry">
+              <div class="post-img"><img src="{% static 'landing/assets/img/blog/81-814390_review-icon-vector-png-transparent-png.png' %}" alt="Run scraping" class="img-fluid" loading="lazy"></div>
+              <div class="post-content">
+                <div class="category-meta"><span class="post-category">2. Monitor</span></div>
+                <h3><a href="{% url 'register' %}">Run scraping and review fresh market data.</a></h3>
+                <p>Capture pricing and availability signals from the channels that matter.</p>
+              </div>
+            </article>
+          </div>
+          <div class="col-lg-4">
+            <article class="post-entry">
+              <div class="post-img"><img src="{% static 'landing/assets/img/blog/109-1095117_mono-test-it-clip-arts-check-box-question.png' %}" alt="Act on insights" class="img-fluid" loading="lazy"></div>
+              <div class="post-content">
+                <div class="category-meta"><span class="post-category">3. Act</span></div>
+                <h3><a href="{% url 'register' %}">Use dashboards to prioritize price and catalog updates.</a></h3>
+                <p>Move from observation to action with focused views for ecommerce managers.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="testimonials" class="team section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Use Cases</h2>
+        <div><span>Where Ecomman</span> <span class="description-title">helps</span></div>
+      </div>
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4">
+          <div class="col-lg-6"><div class="team-member d-flex"><div class="member-img"><img src="{% static 'landing/assets/img/person/person-m-9.webp' %}" class="img-fluid" alt="Ecommerce manager"></div><div class="member-info"><h4>Pricing teams</h4><span>Competitive monitoring</span><p>See where your products sit against competitor prices before campaigns or repricing decisions.</p></div></div></div>
+          <div class="col-lg-6"><div class="team-member d-flex"><div class="member-img"><img src="{% static 'landing/assets/img/person/person-f-9.webp' %}" class="img-fluid" alt="Catalog manager"></div><div class="member-info"><h4>Catalog teams</h4><span>Product governance</span><p>Keep product details, category structure, and channel references easier to maintain.</p></div></div></div>
+          <div class="col-lg-6"><div class="team-member d-flex"><div class="member-img"><img src="{% static 'landing/assets/img/person/person-m-10.webp' %}" class="img-fluid" alt="Operations lead"></div><div class="member-info"><h4>Operations leads</h4><span>Daily dashboards</span><p>Scan availability, performance, and assortment indicators without rebuilding reports manually.</p></div></div></div>
+          <div class="col-lg-6"><div class="team-member d-flex"><div class="member-img"><img src="{% static 'landing/assets/img/person/person-f-13.webp' %}" class="img-fluid" alt="Growth lead"></div><div class="member-info"><h4>Growth teams</h4><span>Market response</span><p>React faster when competitors change prices, stock position, or product visibility.</p></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="contact section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Contact</h2>
+        <div><span>Contact</span> <span class="description-title">us</span></div>
+      </div>
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row justify-content-center">
+          <div class="col-lg-9">
+            <div class="form-wrapper">
+              <form method="post" action="{% url 'contact:contact' %}">
+                {% csrf_token %}
+                <input type="hidden" name="subject" value="Ecomman landing page inquiry">
+                <div class="row gy-3">
+                  <div class="col-md-6"><div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span><input type="text" name="name" class="form-control" placeholder="Your name" required></div></div>
+                  <div class="col-md-6"><div class="input-group"><span class="input-group-text"><i class="bi bi-envelope"></i></span><input type="email" name="email" class="form-control" placeholder="Your email" required></div></div>
+                  <div class="col-12"><div class="input-group"><span class="input-group-text"><i class="bi bi-chat-left-text"></i></span><textarea name="message" class="form-control" placeholder="Tell us about your ecommerce operation" required></textarea></div></div>
+                  <div class="col-12 text-center"><button type="submit">Send message</button></div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  {% include "landing/_footer.html" %}
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <div id="preloader"></div>
+  <script src="{% static 'landing/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'landing/assets/vendor/aos/aos.js' %}"></script>
+  <script src="{% static 'landing/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+  <script src="{% static 'landing/assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
+  <script src="{% static 'landing/assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+  <script src="{% static 'landing/assets/js/main.js' %}"></script>
+</body>
+</html>
+

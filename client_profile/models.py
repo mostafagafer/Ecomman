@@ -5,11 +5,40 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
-from django.conf import settings
 from django.utils.translation import gettext_lazy 
 
 
-ACCOUNT_KEY = ['amazon', 'dawa', 'nahdi', 'noon_sa']
+CHANNELS = {
+    'amazon_sa': {
+        'display_name': 'Amazon SA',
+        'website_url': 'https://www.amazon.sa',
+    },
+    'al_dawa': {
+        'display_name': 'Al-Dawa',
+        'website_url': 'https://www.al-dawaa.com',
+    },
+    'nahdi': {
+        'display_name': 'Nahdi',
+        'website_url': 'https://www.nahdionline.com/en-sa',
+    },
+    'nice_one': {
+        'display_name': 'Nice One',
+        'website_url': 'https://niceonesa.com',
+    },
+    'ana_ninja': {
+        'display_name': 'Ninja',
+        'website_url': 'https://ananinja.com/sa/en',
+    },
+    'noon_sa': {
+        'display_name': 'Noon SA',
+        'website_url': 'https://www.noon.com/saudi-en/',
+    },
+}
+
+CHANNEL_CHOICES = [
+    (key, value['display_name'])
+    for key, value in CHANNELS.items()
+]
 
 
 class Profile(models.Model):
@@ -22,11 +51,19 @@ class Profile(models.Model):
         return str(self.user)
 
 
-class Account_id(models.Model):
-    name = models.CharField(max_length=100, choices=[(key, key) for key in ACCOUNT_KEY])
+class Channel(models.Model):
+    key = models.CharField(max_length=50, choices=CHANNEL_CHOICES, unique=True)
+
+    @property
+    def display_name(self):
+        return CHANNELS.get(self.key, {}).get('display_name', self.key)
+
+    @property
+    def website_url(self):
+        return CHANNELS.get(self.key, {}).get('website_url', '')
 
     def __str__(self):
-        return self.name
+        return self.display_name
     
 
 class Brand(models.Model):
@@ -50,11 +87,11 @@ class Subcategory(models.Model):
 
 class Product(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='products')
-    TITLE = models.CharField(max_length=100, unique=True)
+    product_name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     RSP = models.FloatField(null=True, blank=True)  # Allowing null and blank
     RSP_VAT = models.FloatField(null=True, blank=True)  # Allowing null and blank
-    accounts_id = models.ManyToManyField(Account_id, through='ProductAccountLinkId')
+    channels = models.ManyToManyField(Channel, through='ProductChannel', blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
@@ -69,15 +106,27 @@ class Product(models.Model):
 
 
     def __str__(self):
-        return f"{self.TITLE}"
+        return f"{self.product_name}"
 
-class ProductAccountLinkId(models.Model):
-    product = models.ForeignKey(Product, related_name='account_id_links', on_delete=models.CASCADE)
-    account = models.ForeignKey(Account_id, related_name='product_id_links', on_delete=models.CASCADE)
-    identifier = models.CharField(max_length=300, blank=True, null=True)
+class ProductChannel(models.Model):
+    product = models.ForeignKey(Product, related_name='product_channels', on_delete=models.CASCADE)
+    channel = models.ForeignKey(Channel, related_name='product_channels', on_delete=models.CASCADE)
+    search_name = models.CharField(max_length=300, blank=True, null=True)
+    known_product_url = models.URLField(max_length=1000, blank=True, null=True)
+    is_enabled = models.BooleanField(default=True)
+    last_scraped_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['product', 'channel'], name='unique_product_channel')
+        ]
+
+    @property
+    def effective_search_name(self):
+        return self.search_name or self.product.product_name
 
     def __str__(self):
-        return f"{self.product.TITLE} - {self.account.name} - {self.identifier}"
+        return f"{self.product.product_name} - {self.channel.display_name}"
 
 
             
@@ -90,7 +139,7 @@ class PinnedTable(models.Model):
 
 def product_photo_upload_path(instance, filename):
     user_id = instance.product.profile.user.id
-    product_title = slugify(instance.product.TITLE)
+    product_title = slugify(instance.product.product_name)
     return f'product_photo/{user_id}/{product_title}/{filename}'
 
 class Photo(models.Model):
@@ -146,7 +195,7 @@ class PromoPlan(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product.TITLE} Promo Plan"
+        return f"{self.product.product_name} Promo Plan"
 
 
 
@@ -158,4 +207,3 @@ def create_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_profile(sender, instance, **kwargs):
     instance.profile.save()
-

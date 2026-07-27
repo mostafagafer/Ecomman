@@ -72,7 +72,7 @@ def get_materialized_view_data(period):
 
 #         # Fetch competitor references for the product
 #         competitor_refs = item.product.competitor_references.all()
-#         competitor_ref_titles = [ref.TITLE for ref in competitor_refs]  # Extract competitor titles as a list
+#         competitor_ref_titles = [ref.product_name for ref in competitor_refs]  # Extract competitor titles as a list
 
 #         data['scraped_at'].append(item.scraped_at.isoformat() if item.scraped_at else None)  # Convert datetime to ISO
 #         data['RSP_VAT'].append(float(item.product.RSP_VAT) if item.product.RSP_VAT is not None else None)
@@ -99,7 +99,7 @@ def get_materialized_view_data(period):
 #         data['Brand'].append(str(item.product.brand) if item.product.brand else None)
 #         data['Category'].append(str(item.product.category) if item.product.category else None)
 #         data['Subcategory'].append(str(item.product.subcategory) if item.product.subcategory else None)
-#         data['Product'].append(str(item.product.TITLE))
+#         data['Product'].append(str(item.product.product_name))
 #         data['Account'].append(account_str)
 #         data['Competitor'].append(str(item.product.is_competitor))
 #         data['Competitor_Ref'].append(competitor_ref_titles)  # Add competitor references as a list
@@ -406,7 +406,7 @@ def get_materialized_view_data(period):
 #         data['Brand'].append(str(item.product.brand) if item.product.brand else None)
 #         data['Category'].append(str(item.product.category) if item.product.category else None)
 #         data['Subcategory'].append(str(item.product.subcategory) if item.product.subcategory else None)
-#         data['Product'].append(str(item.product.TITLE))
+#         data['Product'].append(str(item.product.product_name))
 #         data['Account'].append(account_str)
 #         data['Competitor'].append(str(item.product.is_competitor))
 

@@ -74,7 +74,7 @@ def create_materialized_view(view_name, days):
             WITH competitor_refs AS (
                 SELECT 
                     p.id AS product_id,
-                    string_agg(cp."TITLE", ' | ') AS competitor_products
+                    string_agg(cp.product_name, ' | ') AS competitor_products
                 FROM client_profile_product p
                 LEFT JOIN client_profile_product_competitor_references cr ON p.id = cr.from_product_id
                 LEFT JOIN client_profile_product cp ON cr.to_product_id = cp.id
@@ -96,7 +96,7 @@ def create_materialized_view(view_name, days):
             ),
             combined_data AS (
                 SELECT
-                    p."TITLE" AS product_name,
+                    p.product_name AS product_name,
                     p.category_id,
                     COALESCE(c.name, 'Unknown') AS category_name,
                     p.subcategory_id,

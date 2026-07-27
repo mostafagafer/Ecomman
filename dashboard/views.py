@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from scrapper.models import ScrapedData, ScrapedBulkData
+from scrapper.models import ScrapedData
 from client_profile.models import Profile, PinnedTable, Brand ,Product, Subcategory, PromoPlan
 # from django.db.models import OuterRef, Subquery, Max, F, Value as V, FloatField
 from django.db.models import OuterRef, Max, Subquery
@@ -63,7 +63,7 @@ def dashboard_view(request):
         # Get user profile and account names
         profile = Profile.objects.get(user=request.user)
         account_names = list(
-            profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+            profile.products.values_list('channels__key', flat=True).distinct().exclude(channels__key__isnull=True)
         )
         
         # Default to last week data initially
@@ -149,25 +149,17 @@ def price(request):
             filtered_products = filtered_products.filter(id__in=selected_product_ids)
 
         # Define dynamic columns based on user's accounts
-        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+        user_accounts = profile.products.values_list('channels__key', flat=True).distinct().exclude(channels__key__isnull=True)
         all_columns = []
         for account in user_accounts:
             account_lower = account.lower()
             all_columns.extend([
                 {'name': f'{account_lower}_price', 'header': f'{account} Price'},
-                {'name': f'{account_lower}_compliance_flag', 'header': f'{account} Compliance'},
                 {'name': f'{account_lower}_discount', 'header': f'{account} Discount'},
             ])
 
         all_columns.extend([
-                        {'name': 'promo_flag', 'header': 'Promo Flag'},
                         {'name': 'RSP', 'header': 'RSP'},
-                        {'name': 'final_price', 'header': 'Reference Price'},
-                        {'name': 'amazon_sold_by', 'header': 'Amazon KSA Sold By'},
-                        {'name': 'noon_sa_sold_by', 'header': 'Noon KSA Sold By'},
-                        {'name': 'opps', 'header': 'Online Price Performance Score'},
-                        {'name': 'price_deviation_score', 'header': 'Price Deviation Score'},
-                        {'name': 'account_deviation_score', 'header': 'Accunts Deviation Score'},
                     ])
         # Filter columns based on selected_columns
         if selected_columns:
@@ -192,10 +184,10 @@ def price(request):
 
 
         # Get user accounts and filter out None values
-        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+        user_accounts = profile.products.values_list('channels__key', flat=True).distinct().exclude(channels__key__isnull=True)
 
         # Check if "amazon" is in the user's accounts
-        show_amazon_sold_by = 'amazon' in user_accounts
+        show_amazon_sold_by = 'amazon_sa' in user_accounts
 
         # Check if the current table is pinned by the user
         is_table_pinned = profile.pinned_tables.filter(table_name="CurrentPriceStatus").exists()
@@ -330,7 +322,7 @@ def index(request):
         # # Get user accounts using accounts and urls
         # user_accounts = profile.products.values_list('accounts__name', flat=True).distinct()
         # Get user accounts and filter out None values
-        user_accounts = profile.products.values_list('accounts_id__name', flat=True).distinct().exclude(accounts_id__name__isnull=True)
+        user_accounts = profile.products.values_list('channels__key', flat=True).distinct().exclude(channels__key__isnull=True)
         # print('user_accounts', user_accounts)
         # Define all possible dynamic columns
         all_columns = [
@@ -357,7 +349,7 @@ def index(request):
 
 
         # Check if "amazon" is in the user's accounts
-        show_amazon_sold_by = 'amazon' in user_accounts
+        show_amazon_sold_by = 'amazon_sa' in user_accounts
 
         # Check if the current table is pinned by the user
         is_table_pinned = profile.pinned_tables.filter(table_name="CurrentPriceStatus").exists()

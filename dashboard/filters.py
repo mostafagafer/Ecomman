@@ -59,7 +59,7 @@ class DateRangeFilterForm(forms.Form):
 #     class Meta:
 #         model = ScrapedData
 #         fields = {
-#             'product__TITLE': ['icontains'],
+#             'product__product_name': ['icontains'],
 #             'dawa_price': ['gte', 'lte'],
 #             'nahdi_price': ['gte', 'lte'],
 #             'amazon_price': ['gte', 'lte'],

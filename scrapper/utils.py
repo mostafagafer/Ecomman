@@ -43,15 +43,3 @@ def parse_discount_from_text(offer_text):
     return discount_pct
 
 
-# check1 = parse_discount_from_text("50% off")
-# print(check1)
-
-# check2 = parse_discount_from_text("Buy 2 pieces for the price of 1 piece only")
-# print(check2)
-
-# check3 = parse_discount_from_text("Buy 2 pieces and get 50% off on the second piece")
-# print(check3)
-
-
-# Buy 2 pieces for the price of 1 piece only
-# Buy 2 pieces and get 50% off on the second piece
