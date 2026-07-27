@@ -52,6 +52,10 @@
   {% block scripts %}{% endblock scripts %}
 
   <script>
+    document.querySelectorAll('[data-background-url]').forEach(function (element) {
+      element.style.backgroundImage = 'url("' + element.dataset.backgroundUrl + '")';
+    });
+
     var win = navigator.platform.indexOf('Win') > -1;
     if (win && document.querySelector('#sidenav-scrollbar')) {
       var options = {

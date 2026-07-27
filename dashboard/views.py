@@ -22,6 +22,53 @@ from django.core.cache import cache
 # Initialize logger
 logger = logging.getLogger(__name__)
 
+EMPTY_SUMMARY_DATA = {
+    'latest_opps': None,
+    'previous_opps': None,
+    'opps_difference': None,
+}
+
+
+def build_summary_data_from_cache(user_id):
+    cache_key = f'dashboard_data_{user_id}'
+    serialized_data = cache.get(cache_key)
+
+    if not serialized_data:
+        logger.info("Dashboard cache miss for key %s", cache_key)
+        return EMPTY_SUMMARY_DATA.copy()
+
+    if isinstance(serialized_data, str):
+        try:
+            data = json.loads(serialized_data)
+        except json.JSONDecodeError:
+            logger.warning("Ignoring invalid dashboard cache JSON for key %s", cache_key)
+            return EMPTY_SUMMARY_DATA.copy()
+    else:
+        data = serialized_data
+
+    if not isinstance(data, (list, dict)):
+        logger.warning("Ignoring dashboard cache with unsupported type %s for key %s", type(data), cache_key)
+        return EMPTY_SUMMARY_DATA.copy()
+
+    scraped_data_df = pd.DataFrame(data)
+    if scraped_data_df.empty or 'scraped_at' not in scraped_data_df.columns or 'opps' not in scraped_data_df.columns:
+        logger.info("Dashboard cache for key %s has no summary-ready data", cache_key)
+        return EMPTY_SUMMARY_DATA.copy()
+
+    grouped_df = scraped_data_df.groupby('scraped_at').agg({'opps': 'mean'}).reset_index()
+    if grouped_df.empty:
+        return EMPTY_SUMMARY_DATA.copy()
+
+    latest_opps = grouped_df.iloc[0]['opps']
+    previous_opps = grouped_df.iloc[1]['opps'] if len(grouped_df) > 1 else None
+    opps_difference = latest_opps - previous_opps if previous_opps is not None else None
+
+    return {
+        'latest_opps': latest_opps,
+        'previous_opps': previous_opps,
+        'opps_difference': opps_difference,
+    }
+
 
 @login_required
 def scrape_user_products_view(request):
@@ -360,52 +407,7 @@ def index(request):
 
 
 
-        # Retrieve cached data
-        cache_key = f'dashboard_data_{request.user.id}'
-        serialized_data = cache.get(cache_key)
-
-        if serialized_data:
-            # Deserialize if it's a JSON string
-            if isinstance(serialized_data, str):
-                try:
-                    data = json.loads(serialized_data)
-                    logger.info(f"Deserialized cached data: {data}")
-                except json.JSONDecodeError as e:
-                    logger.error(f"JSON decoding failed: {e}")
-                    data = None
-            else:
-                # Directly use data if not a string
-                data = serialized_data
-                logger.info(f"Using cached data directly: {data}")
-        else:
-            logger.warning(f"No cached data found for key {cache_key}")
-            data = None
-
-        # Check if data exists and process it without assumptions
-        if data:
-            logger.info(f"Processing cached data: {type(data)}")
-            if isinstance(data, (list, dict)):
-                scraped_data_df = pd.DataFrame(data)
-                logger.info(f"DataFrame created: {scraped_data_df.head()}")
-
-                # Example calculation: group by 'scraped_at' and calculate mean of 'opps'
-                grouped_df = scraped_data_df.groupby('scraped_at').agg({'opps': 'mean'}).reset_index()
-                latest_opps = grouped_df.iloc[0]['opps'] if not grouped_df.empty else None
-                previous_opps = grouped_df.iloc[1]['opps'] if len(grouped_df) > 1 else None
-                opps_difference = (
-                    latest_opps - previous_opps if latest_opps is not None and previous_opps is not None else None
-                )
-                summary_data = {
-                    'latest_opps': latest_opps,
-                    'previous_opps': previous_opps,
-                    'opps_difference': opps_difference,
-                }
-            else:
-                # Handle unexpected data types
-                logger.error(f"Unexpected data type: {type(data)}")
-                summary_data = {'latest_opps': None, 'previous_opps': None, 'opps_difference': None}
-        else:
-            summary_data = {'latest_opps': None, 'previous_opps': None, 'opps_difference': None}
+        summary_data = build_summary_data_from_cache(request.user.id)
 
         context = {
             'summary_data': summary_data,
@@ -417,7 +419,6 @@ def index(request):
             'show_amazon_sold_by': show_amazon_sold_by,
             'columns': columns,
             'pinned_tables': pinned_tables,  # Pass the list of pinned tables
-            'summary_data': summary_data,  # Summary for the latest and previous average opps
         }
 
         return render(request, 'dashboard/index.html', context)

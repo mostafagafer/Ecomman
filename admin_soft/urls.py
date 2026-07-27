@@ -8,9 +8,6 @@ urlpatterns = [
     path('', views.landing, name='landing'),
     # path('billing/', views.billing, name='billing'),
     # path('tables/', views.tables, name='tables'),
-    path('rtl/', views.rtl, name='rtl'),
-    path('vr/', views.vr, name='vr'),
-
     # Authentication
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),

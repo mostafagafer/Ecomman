@@ -1,5 +1,5 @@
-<a class="product-row" href="{% url 'client_profile:product_detail' product.id %}">
-  <div class="product-main">
+<div class="product-row">
+  <a class="product-main product-detail-link" href="{% url 'client_profile:product_detail' product.id %}">
     <div class="product-thumb">
       {% with photo=product.photos.first %}
         {% if photo %}
@@ -15,19 +15,14 @@
         {% if product.is_competitor %}
           Competitor product
           {% if product.competitor_references.exists %}
-            · linked to {{ product.competitor_references.count }} product{{ product.competitor_references.count|pluralize }}
+            &middot; linked to {{ product.competitor_references.count }} product{{ product.competitor_references.count|pluralize }}
           {% endif %}
         {% else %}
-          {{ product.brand|default:"No brand" }}{% if product.category %} · {{ product.category }}{% endif %}{% if product.subcategory %} · {{ product.subcategory }}{% endif %}
+          {{ product.brand|default:"No brand" }}{% if product.category %} &middot; {{ product.category }}{% endif %}{% if product.subcategory %} &middot; {{ product.subcategory }}{% endif %}
         {% endif %}
       </p>
     </div>
-  </div>
-
-  <div>
-    <span class="product-cell-label">Category</span>
-    <span class="product-cell-value">{{ product.category|default:"-" }}</span>
-  </div>
+  </a>
 
   <div>
     <span class="product-cell-label">Price</span>
@@ -44,4 +39,19 @@
       {% endfor %}
     </span>
   </div>
-</a>
+
+  <div class="product-actions dropdown">
+    <button class="product-actions-button" type="button" id="productActions{{ product.id }}" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Product actions">
+      <span aria-hidden="true"></span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end product-actions-menu" aria-labelledby="productActions{{ product.id }}">
+      <li><a class="dropdown-item" href="{% url 'client_profile:product_edit' product.id %}">Edit</a></li>
+      <li>
+        <form method="post" action="{% url 'client_profile:product_delete' product.id %}" onsubmit="return confirm('Are you sure you want to delete {{ product.product_name|escapejs }}?');">
+          {% csrf_token %}
+          <button type="submit" class="dropdown-item text-danger">Delete</button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</div>

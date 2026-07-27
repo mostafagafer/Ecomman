@@ -431,8 +431,8 @@ CACHES = {
 
 
 LOGIN_REDIRECT_URL = 'dashboard:index' #'accounts:profile'
-LOGOUT_REDIRECT_URL = 'accounts:login'
-# LOGIN_URL = 'accounts:login'
+LOGOUT_REDIRECT_URL = 'login'
+# LOGIN_URL = 'login'
 
 FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://127.0.0.1:8000")
 

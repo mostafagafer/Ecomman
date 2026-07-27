@@ -26,9 +26,3 @@
         </section>
     </main>
 {% endblock %}
-
-{% block extrascript %}
-    <script type="application/javascript">
-        notification.info("<p class='{{ direction.panel }}'>" + "{% trans "Thanks for spending some quality time with the Web site today." %}" + "</p>", 'top', '{{ direction.notify }}');
-    </script>
-{% endblock %}

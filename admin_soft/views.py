@@ -23,36 +23,9 @@ from .emails import (
   send_welcome_email,
 )
 from .models import EmailVerificationOTP
-# from client_profile.models import Profile
-# from scrapper.models import ScrapedData
-# Create your views here.
-# from django.db.models import OuterRef, Subquery, Max, Avg, F, Value as V, FloatField
-# import pandas as pd
-
-# Pages
-# def index(request):
-
-#   return render(request, 'pages/index.html', { 'segment': 'index' })
-
-# def billing(request):
-#   return render(request, 'pages/billing.html', { 'segment': 'billing' })
-
-# def tables(request):
-#   return render(request, 'pages/tables.html', { 'segment': 'tables' })
-
-def vr(request):
-  return render(request, 'pages/virtual-reality.html', { 'segment': 'vr' })
-
-def rtl(request):
-  return render(request, 'pages/rtl.html', { 'segment': 'rtl' })
 
 def landing(request):
   return render(request, 'landing/index.html')
-
-# def profile(request):
-#   return render(request, 'pages/profile.html', { 'segment': 'profile' })
-
-
 
 # Authentication
 class UserLoginView(LoginView):

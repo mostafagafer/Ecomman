@@ -214,6 +214,16 @@ def product_edit(request, id):
     })
 
 
+@login_required
+def product_delete(request, id):
+    product = get_object_or_404(Product, id=id, profile=request.user.profile)
+    if request.method == 'POST':
+        product_name = product.product_name
+        product.delete()
+        messages.success(request, f'{product_name} deleted successfully.')
+    return redirect('client_profile:profile_products')
+
+
 # @login_required
 # def product_edit(request, id):
 #     product = get_object_or_404(Product, id=id, profile=request.user.profile)
